@@ -191,7 +191,7 @@ export function PopupRenderer({ popups }: PopupRendererProps) {
           <div
             key={popup.id}
             data-ag-popup-id={popup.id}
-            className="fixed inset-0 z-[90] flex items-center justify-center p-4 animate-in fade-in duration-200 visible"
+            className="fixed inset-0 z-[10000] flex items-center justify-center p-4 animate-in fade-in duration-200 visible"
           >
             <div
               onClick={() => {
@@ -199,7 +199,7 @@ export function PopupRenderer({ popups }: PopupRendererProps) {
               }}
               className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             />
-            <div className="relative z-[91] w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
+            <div className="relative z-[10001] w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
               <button
                 type="button"
                 onClick={() => closePopup(popup.id)}

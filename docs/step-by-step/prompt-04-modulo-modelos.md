@@ -113,3 +113,15 @@ Implementar o módulo de modelos reutilizáveis (Header, Footer, Popup e Card) c
   - renderização pública condicionando header/footer ao `display_mode`, mantendo popups sempre ativos.
 - Função/Utilidade:
   - melhorar consistência visual do painel e adicionar controle de layout por página.
+
+### Etapa 11 — Execução real de scripts dos modelos
+- Arquivos:
+  - `src/components/public/ModelHtmlRenderer.tsx`
+  - `src/components/public/PageModels.tsx`
+  - `src/components/public/PopupRenderer.tsx`
+- Alteração:
+  - criação de renderer client reutilizável que injeta HTML e recria `<script>` no DOM para execução real no browser;
+  - aplicação do renderer em Header/Footer e conteúdo de Popup;
+  - manutenção do trigger global `agOpenPopup` e dos gatilhos por classe.
+- Função/Utilidade:
+  - corrigir o problema de scripts ignorados por `innerHTML`, garantindo funcionamento de quizzes, menus, efeitos e interações dos modelos.

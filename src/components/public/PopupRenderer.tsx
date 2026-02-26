@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import type { ModelRecord } from '@/lib/actions/models'
+import { ModelHtmlRenderer } from './ModelHtmlRenderer'
 
 interface PopupRendererProps {
   popups: ModelRecord[]
@@ -199,7 +200,6 @@ export function PopupRenderer({ popups }: PopupRendererProps) {
               className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             />
             <div className="relative z-[91] w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
-              {popup.css_content && <style dangerouslySetInnerHTML={{ __html: popup.css_content }} />}
               <button
                 type="button"
                 onClick={() => closePopup(popup.id)}
@@ -207,8 +207,10 @@ export function PopupRenderer({ popups }: PopupRendererProps) {
               >
                 ✕
               </button>
-              <div dangerouslySetInnerHTML={{ __html: popup.html_content || '' }} />
-              {popup.js_content && <script dangerouslySetInnerHTML={{ __html: popup.js_content }} />}
+              <ModelHtmlRenderer
+                html={`${popup.css_content ? `<style>${popup.css_content}</style>` : ''}${popup.html_content || ''}${popup.js_content ? `<script>${popup.js_content}<\/script>` : ''}`}
+                executeOnChangeKey={popup.id}
+              />
             </div>
           </div>
         )

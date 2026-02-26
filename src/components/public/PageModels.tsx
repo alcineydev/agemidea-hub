@@ -1,5 +1,6 @@
 import { getModelsForPage } from '@/lib/actions/models'
 
+import { ModelHtmlRenderer } from './ModelHtmlRenderer'
 import { PopupRenderer } from './PopupRenderer'
 
 interface PageModelsProps {
@@ -10,15 +11,17 @@ interface PageModelsProps {
 export async function PageModels({ pageId, position }: PageModelsProps) {
   const models = await getModelsForPage(pageId)
 
+  const composeModelHtml = (htmlContent: string, cssContent: string, jsContent: string) =>
+    `${cssContent ? `<style>${cssContent}</style>` : ''}${htmlContent || ''}${jsContent ? `<script>${jsContent}<\/script>` : ''}`
+
   if (position === 'header') {
     return (
       <>
         {models.headers.map((header) => (
-          <div key={header.id}>
-            {header.css_content && <style dangerouslySetInnerHTML={{ __html: header.css_content }} />}
-            <div dangerouslySetInnerHTML={{ __html: header.html_content || '' }} />
-            {header.js_content && <script dangerouslySetInnerHTML={{ __html: header.js_content }} />}
-          </div>
+          <ModelHtmlRenderer
+            key={header.id}
+            html={composeModelHtml(header.html_content || '', header.css_content || '', header.js_content || '')}
+          />
         ))}
       </>
     )
@@ -28,11 +31,10 @@ export async function PageModels({ pageId, position }: PageModelsProps) {
     return (
       <>
         {models.footers.map((footer) => (
-          <div key={footer.id}>
-            {footer.css_content && <style dangerouslySetInnerHTML={{ __html: footer.css_content }} />}
-            <div dangerouslySetInnerHTML={{ __html: footer.html_content || '' }} />
-            {footer.js_content && <script dangerouslySetInnerHTML={{ __html: footer.js_content }} />}
-          </div>
+          <ModelHtmlRenderer
+            key={footer.id}
+            html={composeModelHtml(footer.html_content || '', footer.css_content || '', footer.js_content || '')}
+          />
         ))}
       </>
     )

@@ -177,9 +177,23 @@ export function PopupRenderer({ popups }: PopupRendererProps) {
     }
   }, [popupMap])
 
-  const closePopup = (popupId: string) => {
-    setVisiblePopups((prev) => prev.filter((id) => id !== popupId))
-  }
+  useEffect(() => {
+    const handlePopupClose = (event: Event) => {
+      const target = event.target
+      if (!(target instanceof HTMLElement)) return
+
+      const container = target.closest('[data-ag-popup-id]')
+      if (!container) return
+
+      const popupId = container.getAttribute('data-ag-popup-id')
+      if (!popupId) return
+
+      setVisiblePopups((prev) => prev.filter((id) => id !== popupId))
+    }
+
+    document.addEventListener('ag-popup-close', handlePopupClose as EventListener)
+    return () => document.removeEventListener('ag-popup-close', handlePopupClose as EventListener)
+  }, [])
 
   return (
     <>
@@ -191,27 +205,16 @@ export function PopupRenderer({ popups }: PopupRendererProps) {
           <div
             key={popup.id}
             data-ag-popup-id={popup.id}
-            className="fixed inset-0 z-[10000] flex items-center justify-center p-4 animate-in fade-in duration-200 visible"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 10000,
+            }}
           >
-            <div
-              onClick={() => {
-                if (popup.popup_close_on_overlay) closePopup(popup.id)
-              }}
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            <ModelHtmlRenderer
+              html={`${popup.css_content ? `<style>${popup.css_content}</style>` : ''}${popup.html_content || ''}${popup.js_content ? `<script>${popup.js_content}<\/script>` : ''}`}
+              executeOnChangeKey={popup.id}
             />
-            <div className="relative z-[10001] w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
-              <button
-                type="button"
-                onClick={() => closePopup(popup.id)}
-                className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/70 text-white text-sm hover:bg-black/80"
-              >
-                ✕
-              </button>
-              <ModelHtmlRenderer
-                html={`${popup.css_content ? `<style>${popup.css_content}</style>` : ''}${popup.html_content || ''}${popup.js_content ? `<script>${popup.js_content}<\/script>` : ''}`}
-                executeOnChangeKey={popup.id}
-              />
-            </div>
           </div>
         )
       })}

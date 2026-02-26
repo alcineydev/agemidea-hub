@@ -1,6 +1,7 @@
-import { createServerSupabase } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+
+import { getPageBySlug } from '@/lib/actions/pages'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -8,15 +9,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createServerSupabase()
-
-  const { data: page } = await supabase
-    .from('pages')
-    .select('meta_title, meta_description, title')
-    .eq('slug', slug)
-    .eq('status', 'publicada')
-    .eq('page_type', 'normal')
-    .single()
+  const page = await getPageBySlug(slug)
 
   if (!page) return {}
 
@@ -28,15 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function DynamicPage({ params }: Props) {
   const { slug } = await params
-  const supabase = await createServerSupabase()
-
-  const { data: page } = await supabase
-    .from('pages')
-    .select('*')
-    .eq('slug', slug)
-    .eq('status', 'publicada')
-    .eq('page_type', 'normal')
-    .single()
+  const page = await getPageBySlug(slug)
 
   if (!page) {
     notFound()
@@ -44,13 +29,9 @@ export default async function DynamicPage({ params }: Props) {
 
   return (
     <>
-      {page.css_content && (
-        <style dangerouslySetInnerHTML={{ __html: page.css_content }} />
-      )}
-      <div dangerouslySetInnerHTML={{ __html: page.html_content }} />
-      {page.js_content && (
-        <script dangerouslySetInnerHTML={{ __html: page.js_content }} />
-      )}
+      <div dangerouslySetInnerHTML={{ __html: page.html_content || '' }} />
+      {page.css_content && <style dangerouslySetInnerHTML={{ __html: page.css_content }} />}
+      {page.js_content && <script dangerouslySetInnerHTML={{ __html: page.js_content }} />}
     </>
   )
 }

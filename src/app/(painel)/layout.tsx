@@ -42,6 +42,20 @@ export default async function PainelLayout({ children }: { children: React.React
               <Link href="/painel/paginas" className="flex items-center gap-3 text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-[#1e3a5f]/20 text-sm transition-colors">
                 📄 Páginas
               </Link>
+              <div className="ml-6 -mt-1 mb-1 space-y-1">
+                <Link
+                  href="/painel/paginas"
+                  className="flex items-center gap-2 text-xs text-gray-500 hover:text-cyan-300 px-2 py-1 rounded-md hover:bg-[#1e3a5f]/20 transition-colors"
+                >
+                  ├── Todas as Páginas
+                </Link>
+                <Link
+                  href="/painel/paginas/nova"
+                  className="flex items-center gap-2 text-xs text-gray-500 hover:text-cyan-300 px-2 py-1 rounded-md hover:bg-[#1e3a5f]/20 transition-colors"
+                >
+                  └── Criar Nova
+                </Link>
+              </div>
               <Link href="/painel/blog" className="flex items-center gap-3 text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-[#1e3a5f]/20 text-sm transition-colors">
                 📝 Blog
               </Link>

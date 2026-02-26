@@ -1,8 +1,10 @@
-export default function EditarPaginaPage() {
-  return (
-    <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold text-white mb-2">✏️ Editor de Página</h1>
-      <p className="text-gray-500">Em construção — será implementado no próximo prompt.</p>
-    </div>
-  )
+import { redirect } from 'next/navigation'
+
+interface LegacyPageProps {
+  params: Promise<{ id: string }>
+}
+
+export default async function LegacyEditarPaginaPage({ params }: LegacyPageProps) {
+  const { id } = await params
+  redirect(`/painel/paginas/${id}/editar`)
 }

@@ -1,40 +1,48 @@
-import { createServerSupabase } from '@/lib/supabase/server'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 
-export default async function HomePage() {
-  const supabase = await createServerSupabase()
+import { getPageByType } from '@/lib/actions/pages'
 
-  const { data: page } = await supabase
-    .from('pages')
-    .select('*')
-    .eq('page_type', 'home')
-    .eq('status', 'publicada')
-    .single()
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await getPageByType('home')
+  if (!page) return {}
+
+  return {
+    title: page.meta_title || page.title,
+    description: page.meta_description || undefined,
+  }
+}
+
+export default async function HomePage() {
+  const page = await getPageByType('home')
 
   if (!page) {
     return (
-      <div className="min-h-screen bg-[#050510] flex items-center justify-center tech-grid">
-        <div className="text-center animate-fade-in">
-          <div className="w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mx-auto mb-6 shadow-lg shadow-cyan-500/25">
-            A
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Agemidea Hub</h1>
-          <p className="text-gray-500 mb-6">Em breve, uma nova experiência digital.</p>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold px-6 py-3 rounded-xl hover:from-cyan-400 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/20"
-          >
-            Acessar painel
-          </Link>
-        </div>
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#050510',
+          color: '#fff',
+          flexDirection: 'column',
+          gap: '16px',
+        }}
+      >
+        <h1 style={{ fontSize: '24px' }}>Agemidea Hub</h1>
+        <p style={{ color: '#64748b' }}>Nenhuma página inicial configurada.</p>
+        <Link href="/login" style={{ color: '#0ea5e9' }}>
+          Acessar painel →
+        </Link>
       </div>
     )
   }
 
   return (
     <>
+      <div dangerouslySetInnerHTML={{ __html: page.html_content || '' }} />
       {page.css_content && <style dangerouslySetInnerHTML={{ __html: page.css_content }} />}
-      <div dangerouslySetInnerHTML={{ __html: page.html_content }} />
       {page.js_content && <script dangerouslySetInnerHTML={{ __html: page.js_content }} />}
     </>
   )

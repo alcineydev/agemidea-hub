@@ -31,29 +31,7 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  // Rotas protegidas do admin
-  if (pathname.startsWith('/admin')) {
-    if (!user) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/login'
-      url.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(url)
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      const url = request.nextUrl.clone()
-      url.pathname = '/painel'
-      return NextResponse.redirect(url)
-    }
-  }
-
-  // Rotas protegidas do cliente
+  // ── Proteger /painel (precisa estar logado) ──
   if (pathname.startsWith('/painel')) {
     if (!user) {
       const url = request.nextUrl.clone()
@@ -61,18 +39,35 @@ export async function updateSession(request: NextRequest) {
       url.searchParams.set('redirect', pathname)
       return NextResponse.redirect(url)
     }
-  }
 
-  // Se já logado e acessou /login, redireciona
-  if (pathname === '/login' && user) {
+    // Verificar se perfil existe e está ativo
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, is_active')
       .eq('user_id', user.id)
       .single()
 
+    if (!profile || !profile.is_active) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+
+    // Bloquear rotas admin para clientes
+    const adminOnlyRoutes = ['/painel/clientes', '/painel/paginas', '/painel/blog', '/painel/configuracoes']
+    const isAdminRoute = adminOnlyRoutes.some((route) => pathname.startsWith(route))
+
+    if (isAdminRoute && profile.role !== 'admin') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/painel'
+      return NextResponse.redirect(url)
+    }
+  }
+
+  // ── Se logado e acessou /login, redireciona para /painel ──
+  if (pathname === '/login' && user) {
     const url = request.nextUrl.clone()
-    url.pathname = profile?.role === 'admin' ? '/admin/dashboard' : '/painel'
+    url.pathname = '/painel'
     return NextResponse.redirect(url)
   }
 

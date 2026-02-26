@@ -1,3 +1,0 @@
-export default function InteressadosPage() {
-  return <div><h1 className="text-2xl font-bold">📋 Interessados / Leads — Em construção</h1></div>
-}

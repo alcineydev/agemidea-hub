@@ -87,7 +87,7 @@ export const pageSchema = z.object({
   meta_title: z.string().optional(),
   meta_description: z.string().optional(),
   status: z.enum(['rascunho', 'publicada', 'desativada']).optional(),
-  is_homepage: z.boolean().optional(),
+  page_type: z.enum(['home', 'normal', '404', 'blog']).optional().default('normal'),
   show_in_menu: z.boolean().optional(),
   menu_order: z.number().optional(),
 })

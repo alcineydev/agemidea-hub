@@ -3,6 +3,30 @@
 import { revalidatePath } from 'next/cache'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 
+async function getAuthenticatedProfileId(): Promise<string> {
+  const supabase = await createServerClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    throw new Error('Usuário não autenticado.')
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (profileError || !profile) {
+    throw new Error('Perfil do usuário não encontrado.')
+  }
+
+  return profile.id
+}
+
 export type PageType = 'home' | 'normal' | '404' | 'blog'
 export type PageStatus = 'rascunho' | 'publicada'
 
@@ -114,6 +138,7 @@ async function validateUniqueSlug(slug: string, pageType: PageType, currentId?: 
 
 export async function createPage(formData: PageFormData) {
   const supabase = await createServerClient()
+  const profileId = await getAuthenticatedProfileId()
 
   await validateUniquePageType(formData.page_type)
   await validateUniqueSlug(formData.slug, formData.page_type)
@@ -132,6 +157,7 @@ export async function createPage(formData: PageFormData) {
       meta_description: formData.meta_description || '',
       show_in_menu: formData.show_in_menu,
       menu_order: formData.menu_order,
+      created_by: profileId,
     })
     .select()
     .single()
@@ -145,6 +171,7 @@ export async function createPage(formData: PageFormData) {
 
 export async function updatePage(id: string, formData: PageFormData) {
   const supabase = await createServerClient()
+  const profileId = await getAuthenticatedProfileId()
 
   await validateUniquePageType(formData.page_type, id)
   await validateUniqueSlug(formData.slug, formData.page_type, id)
@@ -164,6 +191,7 @@ export async function updatePage(id: string, formData: PageFormData) {
       show_in_menu: formData.show_in_menu,
       menu_order: formData.menu_order,
       updated_at: new Date().toISOString(),
+      updated_by: profileId,
     })
     .eq('id', id)
     .select()

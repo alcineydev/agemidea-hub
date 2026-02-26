@@ -86,3 +86,17 @@ Implementar o módulo completo de páginas (CMS) com CRUD via Server Actions, li
   - `/painel/paginas/[id]/editar`
   - `/api/seed-pages`
   - `/(public)/[slug]` e `not-found` customizado.
+
+### Etapa 10 — Correção de autoria (`created_by` / `updated_by`)
+- Arquivos:
+  - `src/lib/actions/pages.ts`
+  - `src/app/api/seed-pages/route.ts`
+- Alteração:
+  - criação do helper `getAuthenticatedProfileId()` para mapear usuário autenticado (`auth.users`) ao `profiles.id`;
+  - inclusão de `created_by` no `createPage`;
+  - inclusão de `updated_by` no `updatePage`;
+  - ajuste do seed para buscar um perfil admin e inserir páginas com `created_by` preenchido.
+- Função/Utilidade:
+  - remover falha de NOT NULL na coluna `created_by`;
+  - manter rastreabilidade de autoria e atualização nas operações do CMS;
+  - garantir que o seed funcione mesmo com constraints de auditoria ativas.

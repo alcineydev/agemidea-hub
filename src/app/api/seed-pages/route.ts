@@ -115,6 +115,17 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createAdminClient()
+  const { data: adminProfile, error: adminProfileError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('role', 'admin')
+    .limit(1)
+    .single()
+
+  if (adminProfileError || !adminProfile) {
+    return NextResponse.json({ error: 'Nenhum perfil admin encontrado no banco.' }, { status: 500 })
+  }
+
   const results: Array<{ title: string; status: string }> = []
 
   for (const page of SEED_PAGES) {
@@ -129,7 +140,10 @@ export async function POST(request: NextRequest) {
       continue
     }
 
-    const { error } = await supabase.from('pages').insert(page)
+    const { error } = await supabase.from('pages').insert({
+      ...page,
+      created_by: adminProfile.id,
+    })
     if (error) {
       results.push({ title: page.title, status: `error: ${error.message}` })
     } else {

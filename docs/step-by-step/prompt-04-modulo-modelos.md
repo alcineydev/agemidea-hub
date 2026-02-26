@@ -125,3 +125,18 @@ Implementar o módulo de modelos reutilizáveis (Header, Footer, Popup e Card) c
   - manutenção do trigger global `agOpenPopup` e dos gatilhos por classe.
 - Função/Utilidade:
   - corrigir o problema de scripts ignorados por `innerHTML`, garantindo funcionamento de quizzes, menus, efeitos e interações dos modelos.
+
+### Etapa 12 — Redesign completo da sidebar admin
+- Arquivos:
+  - `src/components/layout/PainelSidebar.tsx`
+  - `src/app/(painel)/layout.tsx`
+- Alteração:
+  - sidebar reconstruída com 220px, fixa e `overflow: visible`;
+  - remoção de emojis/subitens inline/seções antigas;
+  - ícones SVG monocromáticos em todos os itens;
+  - item "Páginas" com flyout lateral (Páginas + Modelos);
+  - fechamento do flyout ao clicar fora;
+  - logout no footer via `createClient().auth.signOut()` e redirect para `/login`;
+  - main ajustado para `lg:ml-[220px]` e `relative z-[1]`.
+- Função/Utilidade:
+  - alinhar UX ao wireframe v2 e garantir navegação mais limpa com subníveis em flyout.

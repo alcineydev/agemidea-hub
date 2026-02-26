@@ -76,3 +76,19 @@ Implementar o módulo de modelos reutilizáveis (Header, Footer, Popup e Card) c
 - Validar listagem/edição de modelos no painel.
 - Validar injeção de header/footer/popup no ambiente DEV.
 - Commitar e push para `origin/dev`.
+
+### Etapa 9 — Snippets de acionamento para popups
+- Arquivos:
+  - `src/components/editor/ModelEditor.tsx`
+  - `src/app/(painel)/painel/paginas/modelos/_components/models-list-client.tsx`
+  - `src/components/public/PopupRenderer.tsx`
+  - `src/components/public/PageModels.tsx`
+- Alteração:
+  - adição da seção "Código de Acionamento" no editor para modelos popup, com snippets copiáveis (botão, link, JS e classe CSS);
+  - aviso para modelos novos sem ID ("salve primeiro");
+  - botão extra "🔗 Trigger" na listagem, abrindo mini modal com snippets copiáveis;
+  - registro global de `window.agOpenPopup(id)` no renderer público;
+  - listener global para cliques em `.ag-trigger-popup`;
+  - uso de `data-ag-popup-id` nos overlays dos popups renderizados.
+- Função/Utilidade:
+  - facilitar acionamento manual dos popups em qualquer ponto do site sem customização adicional.

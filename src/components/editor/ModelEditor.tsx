@@ -130,6 +130,24 @@ export function ModelEditor({ mode, modelId, initialData, pages }: ModelEditorPr
 
   const currentEditorValue =
     activeTab === 'html' ? htmlContent : activeTab === 'css' ? cssContent : jsContent
+  const popupModelId = initialData?.id ?? modelId ?? ''
+
+  function copyToClipboard(text: string) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        toast.success('Copiado!')
+      })
+      .catch(() => {
+        const textarea = document.createElement('textarea')
+        textarea.value = text
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+        toast.success('Copiado!')
+      })
+  }
 
   const togglePageSelection = (pageId: string, checked: boolean) => {
     if (checked) {
@@ -326,94 +344,167 @@ export function ModelEditor({ mode, modelId, initialData, pages }: ModelEditorPr
       </div>
 
       {modelType === 'popup' && (
-        <div className="bg-[#0a0f1e] border border-[#1e3a5f]/80 rounded-xl p-4 space-y-3">
-          <h2 className="text-white font-semibold">💬 Configurações do Popup</h2>
-          <div className="space-y-2">
-            {popupTriggerOptions.map((option) => (
-              <label key={option.value} className="flex items-center gap-2 text-sm text-[#cbd5e1] cursor-pointer">
-                <input
-                  type="radio"
-                  name="popup-trigger"
-                  value={option.value}
-                  checked={popupTrigger === option.value}
-                  onChange={(event) => setPopupTrigger(event.target.value as PopupTrigger)}
-                  className="accent-[#0ea5e9]"
-                />
-                {option.label}
-              </label>
-            ))}
-          </div>
-
-          {(popupTrigger === 'timer' || popupTrigger === 'page_load') && (
-            <div>
-              <label htmlFor="popup-delay" className="text-xs text-[#94a3b8] mb-1 block">
-                Atraso (segundos)
-              </label>
-              <input
-                id="popup-delay"
-                type="number"
-                value={popupDelaySeconds}
-                min={0}
-                onChange={(event) => setPopupDelaySeconds(Number(event.target.value))}
-                className="w-full lg:w-40 rounded-lg border border-[#1e3a5f] bg-[#050510] text-white px-3 py-2 text-sm outline-none focus:border-[#0ea5e9]"
-              />
-            </div>
-          )}
-
-          {popupTrigger === 'scroll_percent' && (
-            <div>
-              <label htmlFor="popup-scroll" className="text-xs text-[#94a3b8] mb-1 block">
-                Porcentagem de scroll
-              </label>
-              <input
-                id="popup-scroll"
-                type="number"
-                value={popupScrollPercent}
-                min={1}
-                max={100}
-                onChange={(event) => setPopupScrollPercent(Number(event.target.value))}
-                className="w-full lg:w-40 rounded-lg border border-[#1e3a5f] bg-[#050510] text-white px-3 py-2 text-sm outline-none focus:border-[#0ea5e9]"
-              />
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="popup-frequency" className="text-xs text-[#94a3b8] mb-1 block">
-              Frequência de exibição
-            </label>
-            <select
-              id="popup-frequency"
-              value={popupFrequency}
-              onChange={(event) => setPopupFrequency(event.target.value as PopupFrequency)}
-              className="w-full lg:w-72 rounded-lg border border-[#1e3a5f] bg-[#050510] text-white px-3 py-2 text-sm outline-none focus:border-[#0ea5e9]"
-            >
-              {popupFrequencyOptions.map((option) => (
-                <option key={option.value} value={option.value}>
+        <>
+          <div className="bg-[#0a0f1e] border border-[#1e3a5f]/80 rounded-xl p-4 space-y-3">
+            <h2 className="text-white font-semibold">💬 Configurações do Popup</h2>
+            <div className="space-y-2">
+              {popupTriggerOptions.map((option) => (
+                <label key={option.value} className="flex items-center gap-2 text-sm text-[#cbd5e1] cursor-pointer">
+                  <input
+                    type="radio"
+                    name="popup-trigger"
+                    value={option.value}
+                    checked={popupTrigger === option.value}
+                    onChange={(event) => setPopupTrigger(event.target.value as PopupTrigger)}
+                    className="accent-[#0ea5e9]"
+                  />
                   {option.label}
-                </option>
+                </label>
               ))}
-            </select>
+            </div>
+
+            {(popupTrigger === 'timer' || popupTrigger === 'page_load') && (
+              <div>
+                <label htmlFor="popup-delay" className="text-xs text-[#94a3b8] mb-1 block">
+                  Atraso (segundos)
+                </label>
+                <input
+                  id="popup-delay"
+                  type="number"
+                  value={popupDelaySeconds}
+                  min={0}
+                  onChange={(event) => setPopupDelaySeconds(Number(event.target.value))}
+                  className="w-full lg:w-40 rounded-lg border border-[#1e3a5f] bg-[#050510] text-white px-3 py-2 text-sm outline-none focus:border-[#0ea5e9]"
+                />
+              </div>
+            )}
+
+            {popupTrigger === 'scroll_percent' && (
+              <div>
+                <label htmlFor="popup-scroll" className="text-xs text-[#94a3b8] mb-1 block">
+                  Porcentagem de scroll
+                </label>
+                <input
+                  id="popup-scroll"
+                  type="number"
+                  value={popupScrollPercent}
+                  min={1}
+                  max={100}
+                  onChange={(event) => setPopupScrollPercent(Number(event.target.value))}
+                  className="w-full lg:w-40 rounded-lg border border-[#1e3a5f] bg-[#050510] text-white px-3 py-2 text-sm outline-none focus:border-[#0ea5e9]"
+                />
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="popup-frequency" className="text-xs text-[#94a3b8] mb-1 block">
+                Frequência de exibição
+              </label>
+              <select
+                id="popup-frequency"
+                value={popupFrequency}
+                onChange={(event) => setPopupFrequency(event.target.value as PopupFrequency)}
+                className="w-full lg:w-72 rounded-lg border border-[#1e3a5f] bg-[#050510] text-white px-3 py-2 text-sm outline-none focus:border-[#0ea5e9]"
+              >
+                {popupFrequencyOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-[#cbd5e1]">
+              <input
+                type="checkbox"
+                checked={popupCloseOnOverlay}
+                onChange={(event) => setPopupCloseOnOverlay(event.target.checked)}
+                className="accent-[#0ea5e9]"
+              />
+              Fechar ao clicar no overlay
+            </label>
+            <label className="flex items-center gap-2 text-sm text-[#cbd5e1]">
+              <input
+                type="checkbox"
+                checked={popupMobileEnabled}
+                onChange={(event) => setPopupMobileEnabled(event.target.checked)}
+                className="accent-[#0ea5e9]"
+              />
+              Exibir em dispositivos móveis
+            </label>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-[#cbd5e1]">
-            <input
-              type="checkbox"
-              checked={popupCloseOnOverlay}
-              onChange={(event) => setPopupCloseOnOverlay(event.target.checked)}
-              className="accent-[#0ea5e9]"
-            />
-            Fechar ao clicar no overlay
-          </label>
-          <label className="flex items-center gap-2 text-sm text-[#cbd5e1]">
-            <input
-              type="checkbox"
-              checked={popupMobileEnabled}
-              onChange={(event) => setPopupMobileEnabled(event.target.checked)}
-              className="accent-[#0ea5e9]"
-            />
-            Exibir em dispositivos móveis
-          </label>
-        </div>
+          <div className="bg-[#0a0f1e] border border-[#1e3a5f]/80 rounded-xl p-4 space-y-3">
+            <h2 className="text-white font-semibold">🔗 Código de Acionamento</h2>
+            <p className="text-sm text-[#94a3b8]">
+              Use um dos códigos abaixo em qualquer página para abrir este popup manualmente (ex: botão, link, banner).
+            </p>
+
+            {!popupModelId ? (
+              <p className="text-sm text-amber-400">
+                Salve o modelo primeiro para gerar o código de acionamento.
+              </p>
+            ) : (
+              <>
+                <div className="rounded-lg border border-[#1e3a5f] bg-[#050510] p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-xs text-[#94a3b8]">Botão HTML</span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(`<button onclick="agOpenPopup('${popupModelId}')">Texto</button>`)}
+                      className="text-xs px-2 py-1 rounded-md border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
+                    >
+                      📋 Copiar
+                    </button>
+                  </div>
+                  <code className="text-xs text-[#cbd5e1] font-mono break-all">{`<button onclick="agOpenPopup('${popupModelId}')">Texto</button>`}</code>
+                </div>
+
+                <div className="rounded-lg border border-[#1e3a5f] bg-[#050510] p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-xs text-[#94a3b8]">Link HTML</span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(`<a href="#" onclick="agOpenPopup('${popupModelId}'); return false">Texto</a>`)}
+                      className="text-xs px-2 py-1 rounded-md border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
+                    >
+                      📋 Copiar
+                    </button>
+                  </div>
+                  <code className="text-xs text-[#cbd5e1] font-mono break-all">{`<a href="#" onclick="agOpenPopup('${popupModelId}'); return false">Texto</a>`}</code>
+                </div>
+
+                <div className="rounded-lg border border-[#1e3a5f] bg-[#050510] p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-xs text-[#94a3b8]">Chamar via JS</span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(`agOpenPopup('${popupModelId}')`)}
+                      className="text-xs px-2 py-1 rounded-md border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
+                    >
+                      📋 Copiar
+                    </button>
+                  </div>
+                  <code className="text-xs text-[#cbd5e1] font-mono break-all">{`agOpenPopup('${popupModelId}')`}</code>
+                </div>
+
+                <div className="rounded-lg border border-[#1e3a5f] bg-[#050510] p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-xs text-[#94a3b8]">Classe CSS (em qualquer elemento)</span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(`class="ag-trigger-popup" data-popup-id="${popupModelId}"`)}
+                      className="text-xs px-2 py-1 rounded-md border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
+                    >
+                      📋 Copiar
+                    </button>
+                  </div>
+                  <code className="text-xs text-[#cbd5e1] font-mono break-all">{`class="ag-trigger-popup" data-popup-id="${popupModelId}"`}</code>
+                </div>
+              </>
+            )}
+          </div>
+        </>
       )}
 
       <div className="bg-[#0a0f1e] border border-[#1e3a5f]/80 rounded-xl p-3 flex-1 flex flex-col">

@@ -39,7 +39,11 @@ export async function PageModels({ pageId, position }: PageModelsProps) {
   }
 
   if (position === 'popup') {
-    return <PopupRenderer popups={models.popups} />
+    return (
+      <div data-ag-popup-scope={pageId}>
+        <PopupRenderer popups={models.popups} />
+      </div>
+    )
   }
 
   return null

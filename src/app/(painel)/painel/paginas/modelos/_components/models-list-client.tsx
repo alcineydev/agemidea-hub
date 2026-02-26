@@ -67,7 +67,23 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
   const [isPending, startTransition] = useTransition()
   const [searchValue, setSearchValue] = useState(searchParams.get('search') ?? '')
   const [deleteTarget, setDeleteTarget] = useState<ModelRecord | null>(null)
+  const [triggerTarget, setTriggerTarget] = useState<ModelRecord | null>(null)
   const [duplicateLoadingId, setDuplicateLoadingId] = useState<string | null>(null)
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => toast.success('Copiado!'))
+      .catch(() => {
+        const textarea = document.createElement('textarea')
+        textarea.value = text
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+        toast.success('Copiado!')
+      })
+  }
 
   const selectedType = searchParams.get('type') ?? 'todos'
   const selectedStatus = searchParams.get('status') ?? 'todos'
@@ -240,6 +256,15 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                     >
                       {duplicateLoadingId === model.id ? 'Duplicando...' : '📋 Duplicar'}
                     </button>
+                    {model.model_type === 'popup' && (
+                      <button
+                        type="button"
+                        onClick={() => setTriggerTarget(model)}
+                        className="px-2.5 py-1.5 rounded-lg border border-[#1e3a5f] text-[#94a3b8] hover:text-white hover:bg-[#1e3a5f30]"
+                      >
+                        🔗 Trigger
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setDeleteTarget(model)}
@@ -277,7 +302,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
               <span className={statusConfig[model.status].className}>{statusConfig[model.status].label}</span>
               <span className="text-[#94a3b8] ml-3">Prioridade: {model.priority}</span>
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+            <div className={`mt-3 grid gap-2 text-xs ${model.model_type === 'popup' ? 'grid-cols-4' : 'grid-cols-3'}`}>
               <Link
                 href={`/painel/paginas/modelos/${model.id}/editar`}
                 className="text-center px-2 py-2 rounded-lg border border-[#1e3a5f] text-[#cbd5e1]"
@@ -292,6 +317,15 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
               >
                 📋 Duplicar
               </button>
+              {model.model_type === 'popup' && (
+                <button
+                  type="button"
+                  onClick={() => setTriggerTarget(model)}
+                  className="text-center px-2 py-2 rounded-lg border border-[#1e3a5f] text-[#cbd5e1]"
+                >
+                  🔗 Trigger
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setDeleteTarget(model)}
@@ -303,6 +337,67 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
           </div>
         ))}
       </div>
+
+      {triggerTarget && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setTriggerTarget(null)} />
+          <div className="relative w-full max-w-2xl rounded-xl border border-[#1e3a5f] bg-[#0a0f1e] p-4 space-y-3">
+            <h3 className="text-white font-semibold">Acionamento do Popup: {triggerTarget.name}</h3>
+
+            <div className="rounded-lg border border-[#1e3a5f] bg-[#050510] p-3">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-xs text-[#94a3b8]">Botão</span>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(`<button onclick="agOpenPopup('${triggerTarget.id}')">Texto</button>`)}
+                  className="text-xs px-2 py-1 rounded-md border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
+                >
+                  📋 Copiar
+                </button>
+              </div>
+              <code className="text-xs text-[#cbd5e1] font-mono break-all">{`<button onclick="agOpenPopup('${triggerTarget.id}')">Texto</button>`}</code>
+            </div>
+
+            <div className="rounded-lg border border-[#1e3a5f] bg-[#050510] p-3">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-xs text-[#94a3b8]">JS</span>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(`agOpenPopup('${triggerTarget.id}')`)}
+                  className="text-xs px-2 py-1 rounded-md border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
+                >
+                  📋 Copiar
+                </button>
+              </div>
+              <code className="text-xs text-[#cbd5e1] font-mono break-all">{`agOpenPopup('${triggerTarget.id}')`}</code>
+            </div>
+
+            <div className="rounded-lg border border-[#1e3a5f] bg-[#050510] p-3">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-xs text-[#94a3b8]">Classe</span>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(`class="ag-trigger-popup" data-popup-id="${triggerTarget.id}"`)}
+                  className="text-xs px-2 py-1 rounded-md border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
+                >
+                  📋 Copiar
+                </button>
+              </div>
+              <code className="text-xs text-[#cbd5e1] font-mono break-all">{`class="ag-trigger-popup" data-popup-id="${triggerTarget.id}"`}</code>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setTriggerTarget(null)}
+                className="px-3 py-1.5 rounded-lg border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-[#0a0f1e] border border-[#1e3a5f]/70 rounded-xl p-4 text-sm text-[#94a3b8] flex flex-wrap gap-4">
         <span>{stats.total} modelos no total</span>

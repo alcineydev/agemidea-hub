@@ -8,6 +8,12 @@ interface PopupRendererProps {
   popups: ModelRecord[]
 }
 
+declare global {
+  interface Window {
+    agOpenPopup?: (popupId: string) => void
+  }
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000
 
 function hasFrequencyLock(popup: ModelRecord): boolean {
@@ -135,6 +141,41 @@ export function PopupRenderer({ popups }: PopupRendererProps) {
     }
   }, [popups])
 
+  useEffect(() => {
+    if (visiblePopups.length > 0) {
+      document.body.style.overflow = 'hidden'
+      return
+    }
+    document.body.style.overflow = ''
+  }, [visiblePopups])
+
+  useEffect(() => {
+    window.agOpenPopup = (popupId: string) => {
+      const popupExists = popupMap.get(popupId)
+      if (!popupExists) return
+      setVisiblePopups((prev) => (prev.includes(popupId) ? prev : [...prev, popupId]))
+    }
+
+    const handleTriggerClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null
+      const trigger = target?.closest('.ag-trigger-popup')
+      if (!trigger) return
+
+      event.preventDefault()
+      const popupId = trigger.getAttribute('data-popup-id')
+      if (popupId && window.agOpenPopup) {
+        window.agOpenPopup(popupId)
+      }
+    }
+
+    document.addEventListener('click', handleTriggerClick)
+    return () => {
+      document.removeEventListener('click', handleTriggerClick)
+      window.agOpenPopup = undefined
+      document.body.style.overflow = ''
+    }
+  }, [popupMap])
+
   const closePopup = (popupId: string) => {
     setVisiblePopups((prev) => prev.filter((id) => id !== popupId))
   }
@@ -146,7 +187,11 @@ export function PopupRenderer({ popups }: PopupRendererProps) {
         if (!popup) return null
 
         return (
-          <div key={popup.id} className="fixed inset-0 z-[90] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div
+            key={popup.id}
+            data-ag-popup-id={popup.id}
+            className="fixed inset-0 z-[90] flex items-center justify-center p-4 animate-in fade-in duration-200 visible"
+          >
             <div
               onClick={() => {
                 if (popup.popup_close_on_overlay) closePopup(popup.id)

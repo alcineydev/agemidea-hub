@@ -2,30 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
-
-async function getAuthenticatedProfileId(): Promise<string> {
-  const supabase = await createServerClient()
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    throw new Error('Usuário não autenticado.')
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (profileError || !profile) {
-    throw new Error('Perfil do usuário não encontrado.')
-  }
-
-  return profile.id
-}
+import { getAuthenticatedProfileId } from '@/lib/auth-helpers'
 
 export type PageType = 'home' | 'normal' | '404' | 'blog'
 export type PageStatus = 'rascunho' | 'publicada'

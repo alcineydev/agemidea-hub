@@ -29,3 +29,4 @@ Conectar repositório ao GitHub, configurar variaveis de ambiente DEV/PROD, vali
 
 - O endpoint de teste e apenas diagnostico e deve ser removido apos validacao final do banco.
 - Para retornar `OK`, e necessario que a tabela `settings` exista no schema `public` do Supabase DEV.
+- Endpoint de teste removido no fechamento deste prompt para manter superficie de API enxuta.

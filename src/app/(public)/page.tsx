@@ -42,11 +42,11 @@ export default async function HomePage() {
 
   return (
     <>
-      <PageModels pageId={page.id} position="header" />
+      {(page.display_mode ?? 'body') === 'body' && <PageModels pageId={page.id} position="header" />}
       <div dangerouslySetInnerHTML={{ __html: page.html_content || '' }} />
       {page.css_content && <style dangerouslySetInnerHTML={{ __html: page.css_content }} />}
       {page.js_content && <script dangerouslySetInnerHTML={{ __html: page.js_content }} />}
-      <PageModels pageId={page.id} position="footer" />
+      {(page.display_mode ?? 'body') === 'body' && <PageModels pageId={page.id} position="footer" />}
       <PageModels pageId={page.id} position="popup" />
     </>
   )

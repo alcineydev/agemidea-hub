@@ -34,6 +34,11 @@ const typeBadgeMap: Record<Page['page_type'], string> = {
   blog: 'text-[#8b5cf6] bg-[#8b5cf61a]',
 }
 
+const displayModeBadgeMap: Record<'body' | 'fullscreen', string> = {
+  body: 'text-[#94a3b8] bg-[#94a3b81a]',
+  fullscreen: 'text-[#a78bfa] bg-[#a78bfa1a]',
+}
+
 export function PagesListClient({ pages, stats }: PagesListClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -133,6 +138,7 @@ export function PagesListClient({ pages, stats }: PagesListClientProps) {
               <th className="text-left px-4 py-3 font-medium">Slug</th>
               <th className="text-left px-4 py-3 font-medium">Tipo</th>
               <th className="text-left px-4 py-3 font-medium">Status</th>
+              <th className="text-left px-4 py-3 font-medium">Exibição</th>
               <th className="text-left px-4 py-3 font-medium">Atualizado</th>
               <th className="text-right px-4 py-3 font-medium">Ações</th>
             </tr>
@@ -140,7 +146,7 @@ export function PagesListClient({ pages, stats }: PagesListClientProps) {
           <tbody>
             {pages.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-[#64748b]">
+                <td colSpan={7} className="px-4 py-8 text-center text-[#64748b]">
                   {emptyStateMessage}
                 </td>
               </tr>
@@ -164,6 +170,15 @@ export function PagesListClient({ pages, stats }: PagesListClientProps) {
                   >
                     <span className="w-2 h-2 rounded-full bg-current" />
                     {page.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      displayModeBadgeMap[(page.display_mode === 'fullscreen' ? 'fullscreen' : 'body') as 'body' | 'fullscreen']
+                    }`}
+                  >
+                    {page.display_mode === 'fullscreen' ? 'Tela Total' : 'Corpo'}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-[#94a3b8]">{formatDateTime(page.updated_at)}</td>
@@ -221,6 +236,15 @@ export function PagesListClient({ pages, stats }: PagesListClientProps) {
                 ● {page.status}
               </span>
               <span className="text-[#94a3b8]">{formatDateTime(page.updated_at)}</span>
+            </div>
+            <div className="mt-2">
+              <span
+                className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
+                  displayModeBadgeMap[(page.display_mode === 'fullscreen' ? 'fullscreen' : 'body') as 'body' | 'fullscreen']
+                }`}
+              >
+                {page.display_mode === 'fullscreen' ? 'Tela Total' : 'Corpo'}
+              </span>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
               <Link

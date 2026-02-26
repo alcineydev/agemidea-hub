@@ -6,6 +6,7 @@ import { getAuthenticatedProfileId } from '@/lib/auth-helpers'
 
 export type PageType = 'home' | 'normal' | '404' | 'blog'
 export type PageStatus = 'rascunho' | 'publicada'
+export type DisplayMode = 'body' | 'fullscreen'
 
 export interface PageFormData {
   title: string
@@ -17,6 +18,7 @@ export interface PageFormData {
   js_content: string
   meta_title?: string
   meta_description?: string
+  display_mode: DisplayMode
   show_in_menu: boolean
   menu_order: number
 }
@@ -132,6 +134,7 @@ export async function createPage(formData: PageFormData) {
       js_content: formData.js_content,
       meta_title: formData.meta_title || formData.title,
       meta_description: formData.meta_description || '',
+      display_mode: formData.display_mode || 'body',
       show_in_menu: formData.show_in_menu,
       menu_order: formData.menu_order,
       created_by: profileId,
@@ -165,6 +168,7 @@ export async function updatePage(id: string, formData: PageFormData) {
       js_content: formData.js_content,
       meta_title: formData.meta_title || formData.title,
       meta_description: formData.meta_description || '',
+      display_mode: formData.display_mode || 'body',
       show_in_menu: formData.show_in_menu,
       menu_order: formData.menu_order,
       updated_at: new Date().toISOString(),

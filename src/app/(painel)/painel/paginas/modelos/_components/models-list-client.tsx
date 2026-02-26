@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useMemo, useState, useTransition } from 'react'
+import { useMemo, useState, useTransition, type ReactNode } from 'react'
 import { toast } from 'sonner'
 
 import {
@@ -29,10 +29,10 @@ interface ModelsListClientProps {
 
 const TYPE_FILTERS = [
   { value: 'todos', label: 'Todos' },
-  { value: 'header', label: '🔝 Header' },
-  { value: 'footer', label: '🔻 Footer' },
-  { value: 'popup', label: '💬 Popup' },
-  { value: 'card', label: '🃏 Card' },
+  { value: 'header', label: 'Header' },
+  { value: 'footer', label: 'Footer' },
+  { value: 'popup', label: 'Popup' },
+  { value: 'card', label: 'Card' },
 ] as const
 
 const STATUS_FILTERS = [
@@ -41,11 +41,49 @@ const STATUS_FILTERS = [
   { value: 'inativo', label: '○ Inativos' },
 ] as const
 
-const typeConfig: Record<ModelType, { className: string; icon: string; label: string }> = {
-  header: { className: 'text-[#0ea5e9] bg-[#0ea5e91a]', icon: '🔝', label: 'Header' },
-  footer: { className: 'text-[#6366f1] bg-[#6366f11a]', icon: '🔻', label: 'Footer' },
-  popup: { className: 'text-[#f59e0b] bg-[#f59e0b1a]', icon: '💬', label: 'Popup' },
-  card: { className: 'text-[#10b981] bg-[#10b9811a]', icon: '🃏', label: 'Card' },
+const typeConfig: Record<ModelType, { className: string; icon: ReactNode; label: string }> = {
+  header: {
+    className: 'text-[#0ea5e9] bg-[#0ea5e91a]',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <line x1="3" y1="9" x2="21" y2="9" />
+      </svg>
+    ),
+    label: 'Header',
+  },
+  footer: {
+    className: 'text-[#6366f1] bg-[#6366f11a]',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <line x1="3" y1="15" x2="21" y2="15" />
+      </svg>
+    ),
+    label: 'Footer',
+  },
+  popup: {
+    className: 'text-[#f59e0b] bg-[#f59e0b1a]',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="2" y="4" width="20" height="16" rx="2" />
+        <line x1="8" y1="2" x2="8" y2="4" />
+        <line x1="16" y1="2" x2="16" y2="4" />
+      </svg>
+    ),
+    label: 'Popup',
+  },
+  card: {
+    className: 'text-[#10b981] bg-[#10b9811a]',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="4" y="3" width="16" height="18" rx="2" />
+        <line x1="8" y1="7" x2="16" y2="7" />
+        <line x1="8" y1="11" x2="14" y2="11" />
+      </svg>
+    ),
+    label: 'Card',
+  },
 }
 
 const statusConfig: Record<ModelStatus, { className: string; label: string }> = {
@@ -56,9 +94,38 @@ const statusConfig: Record<ModelStatus, { className: string; label: string }> = 
 function visibilityLabel(model: ModelRecord): string {
   const pagesCount = model.visibility_pages?.length ?? 0
 
-  if (model.visibility_mode === 'all') return '🌐 Todas'
-  if (model.visibility_mode === 'specific') return `📌 Específicas: ${pagesCount}`
-  return `🚫 Exceto: ${pagesCount}`
+  if (model.visibility_mode === 'all') return 'Todas'
+  if (model.visibility_mode === 'specific') return `Específicas: ${pagesCount}`
+  return `Exceto: ${pagesCount}`
+}
+
+function visibilityIcon(mode: ModelRecord['visibility_mode']) {
+  if (mode === 'all') {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+      </svg>
+    )
+  }
+
+  if (mode === 'specific') {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <circle cx="12" cy="12" r="6" />
+        <circle cx="12" cy="12" r="2" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+    </svg>
+  )
 }
 
 export function ModelsListClient({ models, stats }: ModelsListClientProps) {
@@ -148,7 +215,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
       <div className="bg-[#0a0f1e] border border-[#1e3a5f]/70 rounded-xl p-4 space-y-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748b]">🔍</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748b]">⌕</span>
             <input
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
@@ -231,11 +298,16 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                 </td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${typeConfig[model.model_type].className}`}>
-                    <span>{typeConfig[model.model_type].icon}</span>
+                    {typeConfig[model.model_type].icon}
                     <span>{typeConfig[model.model_type].label}</span>
                   </span>
                 </td>
-                <td className="px-4 py-3 text-[#cbd5e1]">{visibilityLabel(model)}</td>
+                <td className="px-4 py-3 text-[#cbd5e1]">
+                  <span className="inline-flex items-center gap-1.5">
+                    {visibilityIcon(model.visibility_mode)}
+                    {visibilityLabel(model)}
+                  </span>
+                </td>
                 <td className="px-4 py-3">
                   <span className={statusConfig[model.status].className}>{statusConfig[model.status].label}</span>
                 </td>
@@ -246,7 +318,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                       href={`/painel/paginas/modelos/${model.id}/editar`}
                       className="px-2.5 py-1.5 rounded-lg border border-[#1e3a5f] text-[#94a3b8] hover:text-white hover:bg-[#1e3a5f30]"
                     >
-                      ✏️ Editar
+                      Editar
                     </Link>
                     <button
                       type="button"
@@ -254,7 +326,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                       onClick={() => handleDuplicate(model.id)}
                       className="px-2.5 py-1.5 rounded-lg border border-[#1e3a5f] text-[#94a3b8] hover:text-white hover:bg-[#1e3a5f30] disabled:opacity-50"
                     >
-                      {duplicateLoadingId === model.id ? 'Duplicando...' : '📋 Duplicar'}
+                      {duplicateLoadingId === model.id ? 'Duplicando...' : 'Duplicar'}
                     </button>
                     {model.model_type === 'popup' && (
                       <button
@@ -262,7 +334,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                         onClick={() => setTriggerTarget(model)}
                         className="px-2.5 py-1.5 rounded-lg border border-[#1e3a5f] text-[#94a3b8] hover:text-white hover:bg-[#1e3a5f30]"
                       >
-                        🔗 Trigger
+                        Trigger
                       </button>
                     )}
                     <button
@@ -270,7 +342,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                       onClick={() => setDeleteTarget(model)}
                       className="px-2.5 py-1.5 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/20"
                     >
-                      🗑 Excluir
+                      Excluir
                     </button>
                   </div>
                 </td>
@@ -297,7 +369,10 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                 {typeConfig[model.model_type].icon} {typeConfig[model.model_type].label}
               </span>
             </div>
-            <div className="mt-3 text-xs text-[#cbd5e1]">{visibilityLabel(model)}</div>
+            <div className="mt-3 text-xs text-[#cbd5e1] inline-flex items-center gap-1.5">
+              {visibilityIcon(model.visibility_mode)}
+              {visibilityLabel(model)}
+            </div>
             <div className="mt-1 text-xs">
               <span className={statusConfig[model.status].className}>{statusConfig[model.status].label}</span>
               <span className="text-[#94a3b8] ml-3">Prioridade: {model.priority}</span>
@@ -307,7 +382,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                 href={`/painel/paginas/modelos/${model.id}/editar`}
                 className="text-center px-2 py-2 rounded-lg border border-[#1e3a5f] text-[#cbd5e1]"
               >
-                ✏️ Editar
+                Editar
               </Link>
               <button
                 type="button"
@@ -315,7 +390,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                 onClick={() => handleDuplicate(model.id)}
                 className="text-center px-2 py-2 rounded-lg border border-[#1e3a5f] text-[#cbd5e1] disabled:opacity-50"
               >
-                📋 Duplicar
+                Duplicar
               </button>
               {model.model_type === 'popup' && (
                 <button
@@ -323,7 +398,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                   onClick={() => setTriggerTarget(model)}
                   className="text-center px-2 py-2 rounded-lg border border-[#1e3a5f] text-[#cbd5e1]"
                 >
-                  🔗 Trigger
+                  Trigger
                 </button>
               )}
               <button
@@ -331,7 +406,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                 onClick={() => setDeleteTarget(model)}
                 className="text-center px-2 py-2 rounded-lg border border-red-500/50 text-red-400"
               >
-                🗑 Excluir
+                Excluir
               </button>
             </div>
           </div>
@@ -352,7 +427,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                   onClick={() => copyToClipboard(`<button onclick="agOpenPopup('${triggerTarget.id}')">Texto</button>`)}
                   className="text-xs px-2 py-1 rounded-md border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
                 >
-                  📋 Copiar
+                  Copiar
                 </button>
               </div>
               <code className="text-xs text-[#cbd5e1] font-mono break-all">{`<button onclick="agOpenPopup('${triggerTarget.id}')">Texto</button>`}</code>
@@ -366,7 +441,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                   onClick={() => copyToClipboard(`agOpenPopup('${triggerTarget.id}')`)}
                   className="text-xs px-2 py-1 rounded-md border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
                 >
-                  📋 Copiar
+                  Copiar
                 </button>
               </div>
               <code className="text-xs text-[#cbd5e1] font-mono break-all">{`agOpenPopup('${triggerTarget.id}')`}</code>
@@ -380,7 +455,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
                   onClick={() => copyToClipboard(`class="ag-trigger-popup" data-popup-id="${triggerTarget.id}"`)}
                   className="text-xs px-2 py-1 rounded-md border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
                 >
-                  📋 Copiar
+                  Copiar
                 </button>
               </div>
               <code className="text-xs text-[#cbd5e1] font-mono break-all">{`class="ag-trigger-popup" data-popup-id="${triggerTarget.id}"`}</code>
@@ -403,10 +478,10 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
         <span>{stats.total} modelos no total</span>
         <span className="text-emerald-400">● {stats.ativos} ativos</span>
         <span className="text-slate-400">○ {stats.inativos} inativos</span>
-        <span>🔝 {stats.headers} headers</span>
-        <span>🔻 {stats.footers} footers</span>
-        <span>💬 {stats.popups} popups</span>
-        <span>🃏 {stats.cards} cards</span>
+        <span>{stats.headers} headers</span>
+        <span>{stats.footers} footers</span>
+        <span>{stats.popups} popups</span>
+        <span>{stats.cards} cards</span>
         {isPending && <span className="text-[#0ea5e9]">Atualizando filtros...</span>}
       </div>
 

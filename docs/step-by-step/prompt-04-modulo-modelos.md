@@ -92,3 +92,24 @@ Implementar o módulo de modelos reutilizáveis (Header, Footer, Popup e Card) c
   - uso de `data-ag-popup-id` nos overlays dos popups renderizados.
 - Função/Utilidade:
   - facilitar acionamento manual dos popups em qualquer ponto do site sem customização adicional.
+
+### Etapa 10 — Refino de UI + display_mode nas páginas
+- Arquivos:
+  - `src/components/editor/ModelEditor.tsx`
+  - `src/app/(painel)/painel/paginas/modelos/_components/models-list-client.tsx`
+  - `src/lib/actions/pages.ts`
+  - `src/components/editor/PageEditor.tsx`
+  - `src/app/(painel)/painel/paginas/_components/pages-list-client.tsx`
+  - `src/app/(public)/page.tsx`
+  - `src/app/(public)/[slug]/page.tsx`
+  - `src/types/index.ts`
+- Alteração:
+  - troca dos radios de visibilidade/popup por selects estilizados;
+  - remoção de emojis no editor de modelos e adoção de SVGs inline monocromáticos;
+  - badges/listagem de modelos com ícones SVG inline;
+  - adição de `display_mode` (`body` / `fullscreen`) nas actions e tipos de páginas;
+  - select de modo de exibição no editor de páginas;
+  - badge de exibição na listagem de páginas;
+  - renderização pública condicionando header/footer ao `display_mode`, mantendo popups sempre ativos.
+- Função/Utilidade:
+  - melhorar consistência visual do painel e adicionar controle de layout por página.

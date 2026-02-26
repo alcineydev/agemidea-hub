@@ -176,6 +176,7 @@ export interface Page {
   meta_description: string | null
   status: PageStatus
   page_type: 'home' | 'normal' | '404' | 'blog'
+  display_mode: 'body' | 'fullscreen'
   show_in_menu: boolean
   menu_order: number
   created_by: string
@@ -195,6 +196,7 @@ export interface PageInsert {
   meta_description?: string | null
   status?: PageStatus
   page_type?: 'home' | 'normal' | '404' | 'blog'
+  display_mode?: 'body' | 'fullscreen'
   show_in_menu?: boolean
   menu_order?: number
   created_by: string
@@ -210,6 +212,7 @@ export interface PageUpdate {
   meta_description?: string | null
   status?: PageStatus
   page_type?: 'home' | 'normal' | '404' | 'blog'
+  display_mode?: 'body' | 'fullscreen'
   show_in_menu?: boolean
   menu_order?: number
   updated_by?: string

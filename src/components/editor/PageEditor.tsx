@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 
 import type { Page } from '@/types'
 import { slugify } from '@/lib/utils'
-import type { PageFormData, PageStatus, PageType } from '@/lib/actions/pages'
+import type { DisplayMode, PageFormData, PageStatus, PageType } from '@/lib/actions/pages'
 import { createPage, updatePage } from '@/lib/actions/pages'
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react').then((mod) => mod.default), {
@@ -46,6 +46,9 @@ export function PageEditor({ mode, pageId, initialData }: PageEditorProps) {
   const [pageType, setPageType] = useState<PageType>(initialData?.page_type ?? 'normal')
   const [slug, setSlug] = useState(initialData?.slug ?? '')
   const [status, setStatus] = useState<PageStatus>(initialStatus)
+  const [displayMode, setDisplayMode] = useState<DisplayMode>(
+    initialData?.display_mode === 'fullscreen' ? 'fullscreen' : 'body'
+  )
   const [showInMenu, setShowInMenu] = useState(initialData?.show_in_menu ?? false)
   const [menuOrder, setMenuOrder] = useState(initialData?.menu_order ?? 0)
   const [metaTitle, setMetaTitle] = useState(initialData?.meta_title ?? '')
@@ -139,6 +142,7 @@ export function PageEditor({ mode, pageId, initialData }: PageEditorProps) {
     js_content: jsContent,
     meta_title: metaTitle.trim() || title.trim(),
     meta_description: metaDescription.trim(),
+    display_mode: displayMode,
     show_in_menu: showInMenu,
     menu_order: Number.isNaN(menuOrder) ? 0 : menuOrder,
   })
@@ -231,7 +235,26 @@ export function PageEditor({ mode, pageId, initialData }: PageEditorProps) {
               ))}
             </select>
           </div>
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-2">
+            <label htmlFor="display-mode" className="text-xs text-[#94a3b8] mb-1 block">
+              Modo de exibição
+            </label>
+            <select
+              id="display-mode"
+              value={displayMode}
+              onChange={(event) => setDisplayMode(event.target.value as DisplayMode)}
+              className="w-full rounded-lg border border-[#1e3a5f] bg-[#050510] text-white px-3 py-2 text-sm outline-none focus:border-[#0ea5e9]"
+            >
+              <option value="body">Corpo (usa Header e Footer)</option>
+              <option value="fullscreen">Tela total (ignora Header e Footer)</option>
+            </select>
+            <p className="text-[12px] text-[#64748b] italic mt-1">
+              {displayMode === 'body'
+                ? '(Header e Footer dos modelos serão aplicados)'
+                : '(A página ocupará a tela toda, sem Header/Footer)'}
+            </p>
+          </div>
+          <div className="lg:col-span-2">
             <label htmlFor="page-slug" className="text-xs text-[#94a3b8] mb-1 block">
               Slug
             </label>

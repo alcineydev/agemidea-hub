@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 
 import { useMediaPicker } from '@/components/media'
 import { toMediaUrl } from '@/lib/media-url'
+import { saveSetting } from '../actions'
 import type { PreviewTheme } from '../types'
 import CopyField from './CopyField'
 import ThemeSwitcher from './ThemeSwitcher'
@@ -25,19 +26,54 @@ export default function LogoImageMode({ logoImageUrl, logoImageId, onUpdateMulti
   const handleChoose = async () => {
     const file = await openPicker()
     if (!file) return
+    const previousUrl = logoImageUrl
+    const previousId = logoImageId
 
     onUpdateMultiple({
       logo_image_url: file.url,
       logo_image_id: file.path,
     })
-    toast.success('Logo selecionada com sucesso.')
+
+    const [urlResult, idResult] = await Promise.all([
+      saveSetting('logo_image_url', file.url),
+      saveSetting('logo_image_id', file.path),
+    ])
+
+    if ('error' in urlResult || 'error' in idResult) {
+      onUpdateMultiple({
+        logo_image_url: previousUrl,
+        logo_image_id: previousId,
+      })
+      toast.error('Erro ao salvar logo no banco.')
+      return
+    }
+
+    toast.success('Logo selecionada e salva com sucesso.')
   }
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
+    const previousUrl = logoImageUrl
+    const previousId = logoImageId
+
     onUpdateMultiple({
       logo_image_url: '',
       logo_image_id: '',
     })
+
+    const [urlResult, idResult] = await Promise.all([
+      saveSetting('logo_image_url', ''),
+      saveSetting('logo_image_id', ''),
+    ])
+
+    if ('error' in urlResult || 'error' in idResult) {
+      onUpdateMultiple({
+        logo_image_url: previousUrl,
+        logo_image_id: previousId,
+      })
+      toast.error('Erro ao remover logo do banco.')
+      return
+    }
+
     toast.success('Logo removida.')
   }
 

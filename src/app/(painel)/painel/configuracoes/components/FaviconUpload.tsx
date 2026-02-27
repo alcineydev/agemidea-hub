@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 
 import { useMediaPicker } from '@/components/media'
 import { toMediaUrl } from '@/lib/media-url'
+import { saveSetting } from '../actions'
 
 interface Props {
   faviconUrl: string
@@ -21,15 +22,33 @@ export default function FaviconUpload({ faviconUrl, onUpdate }: Props) {
   const handleChoose = async () => {
     const file = await openPicker()
     if (!file) return
+    const previousUrl = faviconUrl
     setHasPreviewError(false)
     onUpdate(file.url)
+    const response = await saveSetting('favicon_url', file.url)
+
+    if ('error' in response) {
+      onUpdate(previousUrl)
+      toast.error('Erro ao salvar favicon no banco.')
+      return
+    }
+
     applyFavicon(file.url)
-    toast.success('Favicon selecionada com sucesso.')
+    toast.success('Favicon selecionada e salva com sucesso.')
   }
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
+    const previousUrl = faviconUrl
     setHasPreviewError(false)
     onUpdate('')
+    const response = await saveSetting('favicon_url', '')
+
+    if ('error' in response) {
+      onUpdate(previousUrl)
+      toast.error('Erro ao remover favicon do banco.')
+      return
+    }
+
     clearFavicon()
     toast.success('Favicon removida.')
   }

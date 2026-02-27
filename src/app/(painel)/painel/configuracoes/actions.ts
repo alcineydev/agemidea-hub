@@ -41,6 +41,31 @@ export async function saveSettings(settings: Record<string, string>) {
   return { success: true }
 }
 
+export async function saveSetting(key: string, value: string) {
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from('site_settings')
+    .upsert(
+      {
+        key,
+        value,
+        type: 'text',
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'key' }
+    )
+
+  if (error) {
+    console.error(`Erro ao salvar setting ${key}:`, error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/painel/configuracoes')
+  revalidatePath('/', 'layout')
+  return { success: true }
+}
+
 export async function uploadSiteImage(formData: FormData) {
   const supabase = createAdminClient()
   const file = formData.get('file') as File

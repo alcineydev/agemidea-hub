@@ -19,20 +19,25 @@ export function PainelSidebar({ userName, userRole }: PainelSidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [flyoutOpen, setFlyoutOpen] = useState(false)
+  const [configFlyoutOpen, setConfigFlyoutOpen] = useState(false)
   const flyoutRef = useRef<HTMLDivElement>(null)
+  const configFlyoutRef = useRef<HTMLDivElement>(null)
 
   const isAdmin = userRole === 'admin'
 
   useEffect(() => {
-    if (!flyoutOpen) return
+    if (!flyoutOpen && !configFlyoutOpen) return
     const handler = (event: MouseEvent) => {
       if (flyoutRef.current && !flyoutRef.current.contains(event.target as Node)) {
         setFlyoutOpen(false)
       }
+      if (configFlyoutRef.current && !configFlyoutRef.current.contains(event.target as Node)) {
+        setConfigFlyoutOpen(false)
+      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [flyoutOpen])
+  }, [flyoutOpen, configFlyoutOpen])
 
   const baseItemClass =
     'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13.5px] font-medium whitespace-nowrap transition-all duration-150'
@@ -197,15 +202,53 @@ export function PainelSidebar({ userName, userRole }: PainelSidebarProps) {
         </Link>
 
         {isAdmin && (
-          <Link href="/painel/configuracoes" className={getItemClass(pathname.startsWith('/painel/configuracoes'))}>
-            <NavIcon active={pathname.startsWith('/painel/configuracoes')}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+          <div ref={configFlyoutRef} className="relative z-[200]">
+            <button
+              onClick={() => setConfigFlyoutOpen((prev) => !prev)}
+              className={`w-full ${getItemClass(pathname.startsWith('/painel/configuracoes'))}`}
+            >
+              <NavIcon active={pathname.startsWith('/painel/configuracoes')}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+                </svg>
+              </NavIcon>
+              Configurações
+              <svg className="ml-auto w-3.5 h-3.5 opacity-30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <polyline points="9 18 15 12 9 6" />
               </svg>
-            </NavIcon>
-            Configurações
-          </Link>
+            </button>
+
+            {configFlyoutOpen && (
+              <div className="absolute left-[calc(100%+8px)] top-[-6px] w-[210px] bg-[#0c1020] border border-[#1e3a5f]/30 rounded-[10px] p-1.5 shadow-[0_8px_32px_rgba(0,0,0,.5)] z-[999]">
+                <div className="text-[10px] font-bold text-slate-700 tracking-wider uppercase px-2.5 pt-2 pb-1.5">Configurações</div>
+                <Link
+                  href="/painel/configuracoes?tab=visual"
+                  onClick={() => setConfigFlyoutOpen(false)}
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-md text-[13px] text-slate-500 hover:text-slate-300 hover:bg-[#1e3a5f]/[.15] transition-all"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 00.33 1.82" />
+                    <path d="M4.6 9a1.65 1.65 0 00-.33-1.82" />
+                  </svg>
+                  Identidade Visual
+                </Link>
+                <Link
+                  href="/painel/configuracoes?tab=empresa"
+                  onClick={() => setConfigFlyoutOpen(false)}
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-md text-[13px] text-slate-500 hover:text-slate-300 hover:bg-[#1e3a5f]/[.15] transition-all"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M3 21h18" />
+                    <path d="M5 21V7l8-4v18" />
+                    <path d="M19 21V11l-6-4" />
+                  </svg>
+                  Informações
+                </Link>
+              </div>
+            )}
+          </div>
         )}
       </nav>
 

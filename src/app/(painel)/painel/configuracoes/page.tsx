@@ -1,8 +1,11 @@
-export default function ConfiguracoesPage() {
-  return (
-    <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold text-white mb-2">⚙️ Configurações</h1>
-      <p className="text-gray-500">Em construção — será implementado no próximo prompt.</p>
-    </div>
-  )
+import ConfiguracoesClient from './ConfiguracoesClient'
+import { getSettings } from './actions'
+
+export const metadata = {
+  title: 'Configurações — Agemidea HUB',
+}
+
+export default async function ConfiguracoesPage() {
+  const settings = await getSettings()
+  return <ConfiguracoesClient initialSettings={settings} />
 }

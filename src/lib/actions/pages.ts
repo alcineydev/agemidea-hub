@@ -202,6 +202,41 @@ export async function deletePage(id: string) {
   return { success: true }
 }
 
+export async function bulkUpdatePagesStatus(ids: string[], status: 'published' | 'draft') {
+  if (!ids.length) return { success: true, count: 0 }
+
+  const supabase = await createServerClient()
+  const profileId = await getAuthenticatedProfileId()
+  const targetStatus: PageStatus = status === 'published' ? 'publicada' : 'rascunho'
+
+  const { error } = await supabase
+    .from('pages')
+    .update({
+      status: targetStatus,
+      updated_at: new Date().toISOString(),
+      updated_by: profileId,
+    })
+    .in('id', ids)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/painel/paginas')
+  revalidatePath('/')
+  return { success: true, count: ids.length }
+}
+
+export async function bulkDeletePages(ids: string[]) {
+  if (!ids.length) return { success: true, count: 0 }
+
+  const supabase = await createServerClient()
+  const { error } = await supabase.from('pages').delete().in('id', ids)
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/painel/paginas')
+  revalidatePath('/')
+  return { success: true, count: ids.length }
+}
+
 export async function getPagesStats() {
   const supabase = await createServerClient()
   const { data: all } = await supabase.from('pages').select('id, status')

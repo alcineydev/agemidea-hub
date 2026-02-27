@@ -242,6 +242,41 @@ export async function deleteModel(id: string) {
   return { success: true }
 }
 
+export async function bulkUpdateModelsStatus(ids: string[], status: 'active' | 'inactive') {
+  if (!ids.length) return { success: true, count: 0 }
+
+  const supabase = await createServerClient()
+  const targetStatus: ModelStatus = status === 'active' ? 'ativo' : 'inativo'
+
+  const { error } = await supabase
+    .from('models')
+    .update({
+      status: targetStatus,
+      updated_at: new Date().toISOString(),
+    })
+    .in('id', ids)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/painel/paginas')
+  revalidatePath('/painel/paginas/modelos')
+  revalidatePath('/')
+  return { success: true, count: ids.length }
+}
+
+export async function bulkDeleteModels(ids: string[]) {
+  if (!ids.length) return { success: true, count: 0 }
+
+  const supabase = await createServerClient()
+  const { error } = await supabase.from('models').delete().in('id', ids)
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/painel/paginas')
+  revalidatePath('/painel/paginas/modelos')
+  revalidatePath('/')
+  return { success: true, count: ids.length }
+}
+
 export async function duplicateModel(id: string) {
   const supabase = await createServerClient()
   const profileId = await getAuthenticatedProfileId()

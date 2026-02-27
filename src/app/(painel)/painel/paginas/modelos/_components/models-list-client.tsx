@@ -1,32 +1,26 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useMemo, useState, useTransition, type ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
+  bulkDeleteModels,
+  bulkUpdateModelsStatus,
   deleteModel,
   duplicateModel,
   type ModelRecord,
-  type ModelStatus,
-  type ModelType,
 } from '@/lib/actions/models'
-import { ConfirmModal } from '@/components/ui/confirm-modal'
+import { BulkActionBar } from '@/components/ui/BulkActionBar'
+import DeleteConfirmModal from '@/components/ui/DeleteConfirmModal'
+import Pagination from '@/components/ui/Pagination'
+import TriggerCopyModal from '@/components/ui/TriggerCopyModal'
 
 interface ModelsListClientProps {
   models: ModelRecord[]
-  stats: {
-    total: number
-    ativos: number
-    inativos: number
-    headers: number
-    footers: number
-    popups: number
-    cards: number
-  }
 }
 
+const ITEMS_PER_PAGE = 20
 const TYPE_FILTERS = [
   { value: 'todos', label: 'Todos' },
   { value: 'header', label: 'Header' },
@@ -35,154 +29,70 @@ const TYPE_FILTERS = [
   { value: 'card', label: 'Card' },
 ] as const
 
-const STATUS_FILTERS = [
-  { value: 'todos', label: 'Todos' },
-  { value: 'ativo', label: '● Ativos' },
-  { value: 'inativo', label: '○ Inativos' },
-] as const
+const badgeColors = {
+  header: 'bg-violet-500/10 text-violet-400',
+  footer: 'bg-cyan-600/10 text-cyan-300',
+  popup: 'bg-pink-500/10 text-pink-400',
+  card: 'bg-green-500/10 text-green-400',
+} as const
 
-const typeConfig: Record<ModelType, { className: string; icon: ReactNode; label: string }> = {
-  header: {
-    className: 'text-[#0ea5e9] bg-[#0ea5e91a]',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <line x1="3" y1="9" x2="21" y2="9" />
-      </svg>
-    ),
-    label: 'Header',
-  },
-  footer: {
-    className: 'text-[#6366f1] bg-[#6366f11a]',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <line x1="3" y1="15" x2="21" y2="15" />
-      </svg>
-    ),
-    label: 'Footer',
-  },
-  popup: {
-    className: 'text-[#f59e0b] bg-[#f59e0b1a]',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="2" y="4" width="20" height="16" rx="2" />
-        <line x1="8" y1="2" x2="8" y2="4" />
-        <line x1="16" y1="2" x2="16" y2="4" />
-      </svg>
-    ),
-    label: 'Popup',
-  },
-  card: {
-    className: 'text-[#10b981] bg-[#10b9811a]',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="4" y="3" width="16" height="18" rx="2" />
-        <line x1="8" y1="7" x2="16" y2="7" />
-        <line x1="8" y1="11" x2="14" y2="11" />
-      </svg>
-    ),
-    label: 'Card',
-  },
-}
-
-const statusConfig: Record<ModelStatus, { className: string; label: string }> = {
-  ativo: { className: 'text-emerald-400', label: '● Ativo' },
-  inativo: { className: 'text-slate-400', label: '○ Inativo' },
-}
-
-function visibilityLabel(model: ModelRecord): string {
+function getVisibilityLabel(model: ModelRecord): string {
   const pagesCount = model.visibility_pages?.length ?? 0
-
   if (model.visibility_mode === 'all') return 'Todas'
   if (model.visibility_mode === 'specific') return `Específicas: ${pagesCount}`
   return `Exceto: ${pagesCount}`
 }
 
-function visibilityIcon(mode: ModelRecord['visibility_mode']) {
-  if (mode === 'all') {
-    return (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" />
-        <line x1="2" y1="12" x2="22" y2="12" />
-        <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
-      </svg>
-    )
-  }
-
-  if (mode === 'specific') {
-    return (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" />
-        <circle cx="12" cy="12" r="6" />
-        <circle cx="12" cy="12" r="2" />
-      </svg>
-    )
-  }
-
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-    </svg>
-  )
-}
-
-export function ModelsListClient({ models, stats }: ModelsListClientProps) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [isPending, startTransition] = useTransition()
-  const [searchValue, setSearchValue] = useState(searchParams.get('search') ?? '')
+export function ModelsListClient({ models }: ModelsListClientProps) {
+  const [searchValue, setSearchValue] = useState('')
+  const [filterType, setFilterType] = useState<string>('todos')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [currentPage, setCurrentPage] = useState(1)
   const [deleteTarget, setDeleteTarget] = useState<ModelRecord | null>(null)
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
   const [triggerTarget, setTriggerTarget] = useState<ModelRecord | null>(null)
   const [duplicateLoadingId, setDuplicateLoadingId] = useState<string | null>(null)
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => toast.success('Copiado!'))
-      .catch(() => {
-        const textarea = document.createElement('textarea')
-        textarea.value = text
-        document.body.appendChild(textarea)
-        textarea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textarea)
-        toast.success('Copiado!')
-      })
+  const filteredItems = useMemo(() => {
+    const search = searchValue.trim().toLowerCase()
+    return models.filter((model) => {
+      const typeMatch = filterType === 'todos' || model.model_type === filterType
+      const searchMatch =
+        !search ||
+        model.name.toLowerCase().includes(search) ||
+        (model.description ?? '').toLowerCase().includes(search)
+      return typeMatch && searchMatch
+    })
+  }, [filterType, models, searchValue])
+
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredItems.slice(start, start + ITEMS_PER_PAGE)
+  }, [currentPage, filteredItems])
+
+  const selectedItems = paginatedItems.filter((item) => selectedIds.has(item.id))
+  const activeCount = models.filter((item) => item.status === 'ativo').length
+  const inactiveCount = models.filter((item) => item.status === 'inativo').length
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchValue, filterType])
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
-  const selectedType = searchParams.get('type') ?? 'todos'
-  const selectedStatus = searchParams.get('status') ?? 'todos'
-
-  const emptyMessage = useMemo(() => {
-    if (searchParams.get('search')) return 'Nenhum modelo encontrado para a busca.'
-    if (selectedType !== 'todos' || selectedStatus !== 'todos') return 'Nenhum modelo para os filtros selecionados.'
-    return 'Nenhum modelo cadastrado.'
-  }, [searchParams, selectedStatus, selectedType])
-
-  const updateQuery = (next: { type?: string; status?: string; search?: string }) => {
-    startTransition(() => {
-      const params = new URLSearchParams(searchParams.toString())
-
-      if (next.type !== undefined) {
-        if (!next.type || next.type === 'todos') params.delete('type')
-        else params.set('type', next.type)
-      }
-
-      if (next.status !== undefined) {
-        if (!next.status || next.status === 'todos') params.delete('status')
-        else params.set('status', next.status)
-      }
-
-      if (next.search !== undefined) {
-        if (!next.search.trim()) params.delete('search')
-        else params.set('search', next.search.trim())
-      }
-
-      const query = params.toString()
-      router.push(query ? `/painel/paginas/modelos?${query}` : '/painel/paginas/modelos')
-    })
+  const toggleAll = () => {
+    if (selectedIds.size === paginatedItems.length) {
+      setSelectedIds(new Set())
+      return
+    }
+    setSelectedIds(new Set(paginatedItems.map((item) => item.id)))
   }
 
   const handleDelete = async () => {
@@ -191,7 +101,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
       await deleteModel(deleteTarget.id)
       toast.success('Modelo excluído com sucesso.')
       setDeleteTarget(null)
-      router.refresh()
+      window.location.reload()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao excluir modelo.')
     }
@@ -202,7 +112,7 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
     try {
       await duplicateModel(id)
       toast.success('Modelo duplicado com sucesso.')
-      router.refresh()
+      window.location.reload()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao duplicar modelo.')
     } finally {
@@ -210,58 +120,70 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
     }
   }
 
+  const onBulkActivate = async () => {
+    try {
+      await bulkUpdateModelsStatus(Array.from(selectedIds), 'active')
+      toast.success('Modelos ativados.')
+      setSelectedIds(new Set())
+      window.location.reload()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao ativar modelos.')
+    }
+  }
+
+  const onBulkDeactivate = async () => {
+    try {
+      await bulkUpdateModelsStatus(Array.from(selectedIds), 'inactive')
+      toast.success('Modelos desativados.')
+      setSelectedIds(new Set())
+      window.location.reload()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao desativar modelos.')
+    }
+  }
+
+  const onBulkDelete = async () => {
+    try {
+      await bulkDeleteModels(Array.from(selectedIds))
+      toast.success('Modelos excluídos.')
+      setSelectedIds(new Set())
+      setBulkDeleteOpen(false)
+      window.location.reload()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao excluir modelos.')
+    }
+  }
+
+  const checkboxClass =
+    "w-4 h-4 rounded border-[1.5px] border-[#1e3a5f]/40 bg-transparent checked:bg-cyan-500 checked:border-cyan-500 cursor-pointer appearance-none relative checked:after:content-['✓'] checked:after:text-white checked:after:text-[10px] checked:after:font-bold checked:after:absolute checked:after:inset-0 checked:after:flex checked:after:items-center checked:after:justify-center"
+
+  const emptyMessage = useMemo(() => {
+    if (searchValue) return 'Nenhum modelo encontrado para a busca.'
+    if (filterType !== 'todos') return 'Nenhum modelo para o tipo selecionado.'
+    return 'Nenhum modelo cadastrado.'
+  }, [searchValue, filterType])
+
   return (
     <div className="space-y-4">
-      <div className="bg-[#0a0f1e] border border-[#1e3a5f]/70 rounded-xl p-4 space-y-3">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748b]">⌕</span>
-            <input
-              value={searchValue}
-              onChange={(event) => setSearchValue(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') updateQuery({ search: searchValue })
-              }}
-              placeholder="Buscar por nome ou descrição..."
-              className="w-full rounded-lg border border-[#1e3a5f] bg-[#050510] text-white pl-10 pr-3 py-2 text-sm outline-none focus:border-[#0ea5e9]"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => updateQuery({ search: searchValue })}
-            className="px-4 py-2 rounded-lg border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30] text-sm"
-          >
-            Buscar
-          </button>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="relative flex-1">
+          <input
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
+            placeholder="Buscar por nome ou descrição..."
+            className="w-full rounded-lg border border-[#1e3a5f]/20 bg-[#050510]/50 text-slate-300 px-3 py-2 text-[13px] outline-none focus:border-cyan-500/40"
+          />
         </div>
-
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {TYPE_FILTERS.map((filter) => (
             <button
               key={filter.value}
               type="button"
-              onClick={() => updateQuery({ type: filter.value })}
-              className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                selectedType === filter.value
-                  ? 'bg-[#0ea5e9] text-white border-[#0ea5e9]'
-                  : 'border-[#1e3a5f] text-[#94a3b8] hover:text-white hover:bg-[#1e3a5f30]'
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map((filter) => (
-            <button
-              key={filter.value}
-              type="button"
-              onClick={() => updateQuery({ status: filter.value })}
-              className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                selectedStatus === filter.value
-                  ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
-                  : 'border-[#1e3a5f] text-[#94a3b8] hover:text-white hover:bg-[#1e3a5f30]'
+              onClick={() => setFilterType(filter.value)}
+              className={`px-3 py-2 rounded-lg text-[12px] border transition-all ${
+                filterType === filter.value
+                  ? 'text-cyan-400 border-cyan-500/30 bg-cyan-500/[.08]'
+                  : 'text-slate-600 border-[#1e3a5f]/20 hover:text-slate-400'
               }`}
             >
               {filter.label}
@@ -270,230 +192,178 @@ export function ModelsListClient({ models, stats }: ModelsListClientProps) {
         </div>
       </div>
 
-      <div className="hidden lg:block bg-[#0a0f1e] border border-[#1e3a5f]/70 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-[#050510] text-[#94a3b8]">
+      <BulkActionBar
+        count={selectedIds.size}
+        type="models"
+        onPublish={onBulkActivate}
+        onDraft={onBulkDeactivate}
+        onDelete={() => setBulkDeleteOpen(true)}
+        onClear={() => setSelectedIds(new Set())}
+      />
+
+      <div className="border border-[#1e3a5f]/15 rounded-xl overflow-hidden bg-[#050510]/30">
+        <table className="w-full">
+          <thead>
             <tr>
-              <th className="text-left px-4 py-3 font-medium">Nome</th>
-              <th className="text-left px-4 py-3 font-medium">Tipo</th>
-              <th className="text-left px-4 py-3 font-medium">Visibilidade</th>
-              <th className="text-left px-4 py-3 font-medium">Status</th>
-              <th className="text-left px-4 py-3 font-medium">Prioridade</th>
-              <th className="text-right px-4 py-3 font-medium">Ações</th>
+              <th className="px-4 py-2.5 text-[11px] font-semibold text-slate-600 tracking-wider uppercase bg-[#0a0f1e]/50 border-b border-[#1e3a5f]/15 w-[40px]">
+                <input
+                  type="checkbox"
+                  aria-label="Selecionar todos os modelos da página atual"
+                  checked={paginatedItems.length > 0 && selectedIds.size === paginatedItems.length}
+                  onChange={toggleAll}
+                  className={checkboxClass}
+                />
+              </th>
+              {['Nome', 'Tipo', 'Status', 'Visibilidade', 'Prioridade', 'Atualizado', 'Ações'].map((column) => (
+                <th
+                  key={column}
+                  className="px-4 py-2.5 text-[11px] font-semibold text-slate-600 tracking-wider uppercase bg-[#0a0f1e]/50 border-b border-[#1e3a5f]/15 text-left"
+                >
+                  {column}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {models.length === 0 && (
+            {paginatedItems.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-[#64748b]">
+                <td colSpan={8} className="px-4 py-8 text-center text-[13px] text-slate-600">
                   {emptyMessage}
                 </td>
               </tr>
             )}
-            {models.map((model) => (
-              <tr key={model.id} className="border-t border-[#1e3a5f]/40">
-                <td className="px-4 py-3">
-                  <div className="text-white">{model.name}</div>
-                  <div className="text-xs text-[#64748b] truncate max-w-[360px]">{model.description || '-'}</div>
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${typeConfig[model.model_type].className}`}>
-                    {typeConfig[model.model_type].icon}
-                    <span>{typeConfig[model.model_type].label}</span>
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-[#cbd5e1]">
-                  <span className="inline-flex items-center gap-1.5">
-                    {visibilityIcon(model.visibility_mode)}
-                    {visibilityLabel(model)}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <span className={statusConfig[model.status].className}>{statusConfig[model.status].label}</span>
-                </td>
-                <td className="px-4 py-3 text-[#cbd5e1]">{model.priority}</td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end items-center gap-2">
-                    <Link
-                      href={`/painel/paginas/modelos/${model.id}/editar`}
-                      className="px-2.5 py-1.5 rounded-lg border border-[#1e3a5f] text-[#94a3b8] hover:text-white hover:bg-[#1e3a5f30]"
-                    >
-                      Editar
-                    </Link>
-                    <button
-                      type="button"
-                      disabled={duplicateLoadingId === model.id}
-                      onClick={() => handleDuplicate(model.id)}
-                      className="px-2.5 py-1.5 rounded-lg border border-[#1e3a5f] text-[#94a3b8] hover:text-white hover:bg-[#1e3a5f30] disabled:opacity-50"
-                    >
-                      {duplicateLoadingId === model.id ? 'Duplicando...' : 'Duplicar'}
-                    </button>
-                    {model.model_type === 'popup' && (
+            {paginatedItems.map((model) => {
+              const selected = selectedIds.has(model.id)
+              return (
+                <tr
+                  key={model.id}
+                  className={`border-b border-[#1e3a5f]/8 transition-colors hover:bg-[#1e3a5f]/6 ${selected ? 'bg-cyan-500/[.04]' : ''}`}
+                >
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      aria-label={`Selecionar modelo ${model.name}`}
+                      checked={selected}
+                      onChange={() => toggleSelect(model.id)}
+                      className={checkboxClass}
+                    />
+                  </td>
+                  <td className="px-4 py-3 text-[13px] text-slate-300">{model.name}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${badgeColors[model.model_type]}`}>
+                      {model.model_type.toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`flex items-center gap-1.5 text-[12px] ${model.status === 'ativo' ? 'text-green-400' : 'text-amber-400'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${model.status === 'ativo' ? 'bg-green-400' : 'bg-amber-400'}`} />
+                      {model.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-[13px] text-slate-400">{getVisibilityLabel(model)}</td>
+                  <td className="px-4 py-3 text-[13px] text-slate-500">{model.priority}</td>
+                  <td className="px-4 py-3 text-[13px] text-slate-500">{new Date(model.updated_at).toLocaleDateString('pt-BR')}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1 justify-end">
+                      {model.model_type === 'popup' && (
+                        <button
+                          type="button"
+                          onClick={() => setTriggerTarget(model)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-[#1e3a5f]/15 hover:text-pink-400 transition-all relative group"
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                            <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                          </svg>
+                          <span className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-slate-200 text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                            Trigger
+                          </span>
+                        </button>
+                      )}
+                      <Link
+                        href={`/painel/paginas/modelos/${model.id}/editar`}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-[#1e3a5f]/15 hover:text-cyan-400 transition-all relative group"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                        <span className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-slate-200 text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                          Editar
+                        </span>
+                      </Link>
                       <button
                         type="button"
-                        onClick={() => setTriggerTarget(model)}
-                        className="px-2.5 py-1.5 rounded-lg border border-[#1e3a5f] text-[#94a3b8] hover:text-white hover:bg-[#1e3a5f30]"
+                        disabled={duplicateLoadingId === model.id}
+                        onClick={() => handleDuplicate(model.id)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-[#1e3a5f]/15 hover:text-violet-400 transition-all relative group disabled:opacity-40"
                       >
-                        Trigger
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <rect x="9" y="9" width="13" height="13" rx="2" />
+                          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                        </svg>
+                        <span className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-slate-200 text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                          {duplicateLoadingId === model.id ? 'Duplicando...' : 'Duplicar'}
+                        </span>
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setDeleteTarget(model)}
-                      className="px-2.5 py-1.5 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/20"
-                    >
-                      Excluir
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(model)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:bg-[#1e3a5f]/15 hover:text-red-400 transition-all relative group"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                        </svg>
+                        <span className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-slate-200 text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                          Excluir
+                        </span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
-      </div>
-
-      <div className="grid gap-3 lg:hidden">
-        {models.length === 0 && (
-          <div className="bg-[#0a0f1e] border border-[#1e3a5f]/70 rounded-xl p-6 text-center text-[#64748b]">
-            {emptyMessage}
+        <div className="flex items-center justify-between px-4 py-3 bg-[#0a0f1e]/30 border-t border-[#1e3a5f]/10">
+          <div className="flex gap-4 text-[12px] text-slate-700">
+            <span>{models.length} modelos</span>
+            <span>
+              <span className="text-green-400">●</span> <span className="text-slate-500 font-medium">{activeCount} ativos</span>
+            </span>
+            <span>
+              <span className="text-amber-400">●</span> <span className="text-slate-500 font-medium">{inactiveCount} inativos</span>
+            </span>
           </div>
-        )}
-        {models.map((model) => (
-          <div key={model.id} className="bg-[#0a0f1e] border border-[#1e3a5f]/70 rounded-xl p-4">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <h3 className="text-white font-semibold">{model.name}</h3>
-                <p className="text-xs text-[#64748b] mt-1">{model.description || 'Sem descrição'}</p>
-              </div>
-              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${typeConfig[model.model_type].className}`}>
-                {typeConfig[model.model_type].icon} {typeConfig[model.model_type].label}
-              </span>
-            </div>
-            <div className="mt-3 text-xs text-[#cbd5e1] inline-flex items-center gap-1.5">
-              {visibilityIcon(model.visibility_mode)}
-              {visibilityLabel(model)}
-            </div>
-            <div className="mt-1 text-xs">
-              <span className={statusConfig[model.status].className}>{statusConfig[model.status].label}</span>
-              <span className="text-[#94a3b8] ml-3">Prioridade: {model.priority}</span>
-            </div>
-            <div className={`mt-3 grid gap-2 text-xs ${model.model_type === 'popup' ? 'grid-cols-4' : 'grid-cols-3'}`}>
-              <Link
-                href={`/painel/paginas/modelos/${model.id}/editar`}
-                className="text-center px-2 py-2 rounded-lg border border-[#1e3a5f] text-[#cbd5e1]"
-              >
-                Editar
-              </Link>
-              <button
-                type="button"
-                disabled={duplicateLoadingId === model.id}
-                onClick={() => handleDuplicate(model.id)}
-                className="text-center px-2 py-2 rounded-lg border border-[#1e3a5f] text-[#cbd5e1] disabled:opacity-50"
-              >
-                Duplicar
-              </button>
-              {model.model_type === 'popup' && (
-                <button
-                  type="button"
-                  onClick={() => setTriggerTarget(model)}
-                  className="text-center px-2 py-2 rounded-lg border border-[#1e3a5f] text-[#cbd5e1]"
-                >
-                  Trigger
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setDeleteTarget(model)}
-                className="text-center px-2 py-2 rounded-lg border border-red-500/50 text-red-400"
-              >
-                Excluir
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {triggerTarget && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setTriggerTarget(null)} />
-          <div className="relative w-full max-w-2xl rounded-xl border border-[#1e3a5f] bg-[#0a0f1e] p-4 space-y-3">
-            <h3 className="text-white font-semibold">Acionamento do Popup: {triggerTarget.name}</h3>
-
-            <div className="rounded-lg border border-[#1e3a5f] bg-[#050510] p-3">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-xs text-[#94a3b8]">Botão</span>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(`<button onclick="agOpenPopup('${triggerTarget.id}')">Texto</button>`)}
-                  className="text-xs px-2 py-1 rounded-md border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
-                >
-                  Copiar
-                </button>
-              </div>
-              <code className="text-xs text-[#cbd5e1] font-mono break-all">{`<button onclick="agOpenPopup('${triggerTarget.id}')">Texto</button>`}</code>
-            </div>
-
-            <div className="rounded-lg border border-[#1e3a5f] bg-[#050510] p-3">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-xs text-[#94a3b8]">JS</span>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(`agOpenPopup('${triggerTarget.id}')`)}
-                  className="text-xs px-2 py-1 rounded-md border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
-                >
-                  Copiar
-                </button>
-              </div>
-              <code className="text-xs text-[#cbd5e1] font-mono break-all">{`agOpenPopup('${triggerTarget.id}')`}</code>
-            </div>
-
-            <div className="rounded-lg border border-[#1e3a5f] bg-[#050510] p-3">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-xs text-[#94a3b8]">Classe</span>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(`class="ag-trigger-popup" data-popup-id="${triggerTarget.id}"`)}
-                  className="text-xs px-2 py-1 rounded-md border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
-                >
-                  Copiar
-                </button>
-              </div>
-              <code className="text-xs text-[#cbd5e1] font-mono break-all">{`class="ag-trigger-popup" data-popup-id="${triggerTarget.id}"`}</code>
-            </div>
-
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => setTriggerTarget(null)}
-                className="px-3 py-1.5 rounded-lg border border-[#1e3a5f] text-[#cbd5e1] hover:bg-[#1e3a5f30]"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredItems.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+          />
         </div>
-      )}
-
-      <div className="bg-[#0a0f1e] border border-[#1e3a5f]/70 rounded-xl p-4 text-sm text-[#94a3b8] flex flex-wrap gap-4">
-        <span>{stats.total} modelos no total</span>
-        <span className="text-emerald-400">● {stats.ativos} ativos</span>
-        <span className="text-slate-400">○ {stats.inativos} inativos</span>
-        <span>{stats.headers} headers</span>
-        <span>{stats.footers} footers</span>
-        <span>{stats.popups} popups</span>
-        <span>{stats.cards} cards</span>
-        {isPending && <span className="text-[#0ea5e9]">Atualizando filtros...</span>}
       </div>
 
-      <ConfirmModal
-        isOpen={Boolean(deleteTarget)}
-        title="Excluir modelo"
-        message={`Tem certeza que deseja excluir "${deleteTarget?.name ?? ''}"? Esta ação não pode ser desfeita.`}
-        confirmLabel="Sim, excluir"
-        cancelLabel="Cancelar"
+      <TriggerCopyModal
+        open={Boolean(triggerTarget)}
+        onClose={() => setTriggerTarget(null)}
+        modelId={triggerTarget?.id ?? ''}
+        modelName={triggerTarget?.name ?? ''}
+      />
+
+      <DeleteConfirmModal
+        open={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        onConfirm={onBulkDelete}
+        items={selectedItems.map((item) => ({ id: item.id, name: item.name }))}
+      />
+
+      <DeleteConfirmModal
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
-        variant="danger"
+        items={deleteTarget ? [{ id: deleteTarget.id, name: deleteTarget.name }] : []}
       />
     </div>
   )

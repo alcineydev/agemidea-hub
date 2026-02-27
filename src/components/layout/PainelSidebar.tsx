@@ -59,11 +59,11 @@ export function PainelSidebar({ userName, userRole }: PainelSidebarProps) {
       <div className="px-4 pt-4 pb-3">
         <DynamicLogo
           className="items-center"
-          imgClassName="h-8 w-auto object-contain"
+          imgClassName="h-8 w-auto object-contain max-w-[160px]"
           fallbackText="AGEMIDEA"
           fallbackBadge="HUB"
           showBadge
-          showIconFallback
+          showIcon
         />
       </div>
 

@@ -162,7 +162,7 @@ function LoginContent() {
                 fallbackText="AGEMIDEA"
                 fallbackBadge="HUB"
                 showBadge
-                showIconFallback
+                showIcon
               />
             </Link>
           </div>
@@ -217,11 +217,11 @@ function LoginContent() {
         <div className="lg:hidden pt-12 pb-6 relative z-10">
           <Link href="/" className="flex items-center gap-2.5 mb-5">
             <DynamicLogo
-              imgClassName="h-10 w-auto object-contain"
+              imgClassName="h-12 w-auto object-contain max-w-[200px]"
               fallbackText="AGEMIDEA"
               fallbackBadge="HUB"
               showBadge
-              showIconFallback
+              showIcon
             />
           </Link>
           <h1 className="text-xl font-bold text-white leading-tight">

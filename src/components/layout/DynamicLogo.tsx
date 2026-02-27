@@ -11,76 +11,70 @@ interface DynamicLogoProps {
   fallbackText?: string
   fallbackBadge?: string
   showBadge?: boolean
-  showIconFallback?: boolean
+  showIcon?: boolean
 }
 
 export function DynamicLogo({
   className = '',
-  imgClassName = '',
+  imgClassName = 'h-8 w-auto object-contain',
   fallbackText = 'AGEMIDEA',
   fallbackBadge = 'HUB',
   showBadge = true,
-  showIconFallback = false,
+  showIcon = true,
 }: DynamicLogoProps) {
-  const [logoMode, setLogoMode] = useState('text')
-  const [logoUrl, setLogoUrl] = useState('')
-  const [textConfig, setTextConfig] = useState({
-    text: fallbackText,
-    font: 'Inter',
-    size: '24',
-    color: '#0ea5e9',
-    weight: '800',
-    spacing: '-0.02em',
-  })
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('site_settings')
-        .select('key, value')
-        .in('key', [
-          'logo_type',
-          'logo_image_url',
-          'logo_text',
-          'logo_font',
-          'logo_size',
-          'logo_color',
-          'logo_weight',
-          'logo_spacing',
-        ])
+      try {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('site_settings')
+          .select('key, value')
+          .in('key', ['logo_image_url', 'logo_type'])
 
-      if (!data) return
+        if (!data) return
 
-      const settings: Record<string, string> = {}
-      data.forEach((setting) => {
-        settings[setting.key] = setting.value ?? ''
-      })
+        const settings: Record<string, string> = {}
+        data.forEach((setting) => {
+          settings[setting.key] = setting.value ?? ''
+        })
 
-      if (settings.logo_type) setLogoMode(settings.logo_type)
-      if (settings.logo_image_url) setLogoUrl(settings.logo_image_url)
-      setTextConfig((prev) => ({
-        ...prev,
-        text: settings.logo_text || prev.text,
-        font: settings.logo_font || prev.font,
-        size: settings.logo_size || prev.size,
-        color: settings.logo_color || prev.color,
-        weight: settings.logo_weight || prev.weight,
-        spacing: settings.logo_spacing || prev.spacing,
-      }))
+        if (settings.logo_image_url && settings.logo_image_url.trim() !== '') {
+          setLogoUrl(settings.logo_image_url)
+        }
+      } finally {
+        setLoading(false)
+      }
     }
 
     void load()
-  }, [fallbackText])
+  }, [])
 
-  if (logoMode === 'image' && logoUrl) {
+  if (loading) {
+    return (
+      <div className={`flex items-center gap-2.5 ${className}`}>
+        {showIcon && <FallbackIcon />}
+        <span className="text-base font-extrabold tracking-tight text-white">{fallbackText}</span>
+        {showBadge && fallbackBadge && (
+          <span className="text-[9px] px-1.5 py-0.5 bg-[rgba(14,165,233,0.15)] text-[#0ea5e9] rounded font-bold tracking-wider uppercase">
+            {fallbackBadge}
+          </span>
+        )}
+      </div>
+    )
+  }
+
+  if (logoUrl) {
     return (
       <div className={className}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={toMediaUrl(logoUrl)}
           alt={fallbackText}
-          className={imgClassName || 'h-8 w-auto object-contain'}
+          className={imgClassName}
+          onError={() => setLogoUrl(null)}
         />
       </div>
     )
@@ -88,28 +82,23 @@ export function DynamicLogo({
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      {showIconFallback && (
-        <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center text-white text-[12px] font-bold">
-          A
-        </div>
-      )}
-      <span
-        style={{
-          fontFamily: textConfig.font,
-          fontSize: `${textConfig.size}px`,
-          fontWeight: Number(textConfig.weight),
-          color: textConfig.color,
-          letterSpacing: textConfig.spacing,
-          lineHeight: 1,
-        }}
-      >
-        {textConfig.text || fallbackText}
-      </span>
+      {showIcon && <FallbackIcon />}
+      <span className="text-base font-extrabold tracking-tight text-white">{fallbackText}</span>
       {showBadge && fallbackBadge && (
         <span className="text-[9px] px-1.5 py-0.5 bg-[rgba(14,165,233,0.15)] text-[#0ea5e9] rounded font-bold tracking-wider uppercase">
           {fallbackBadge}
         </span>
       )}
+    </div>
+  )
+}
+
+function FallbackIcon() {
+  return (
+    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0ea5e9] to-[#2563eb] flex items-center justify-center flex-shrink-0">
+      <svg className="w-[18px] h-[18px] text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+      </svg>
     </div>
   )
 }

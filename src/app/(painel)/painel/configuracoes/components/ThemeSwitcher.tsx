@@ -9,14 +9,14 @@ interface Props {
 
 export default function ThemeSwitcher({ theme, onChange }: Props) {
   return (
-    <div className="absolute top-2.5 right-2.5 flex gap-0.5 bg-[rgba(30,58,95,.2)] rounded-lg p-0.5 z-10">
+    <div className="flex justify-end gap-1">
       <button
         type="button"
         onClick={() => onChange('dark')}
-        className={`w-7 h-7 rounded-md flex items-center justify-center transition-all ${
+        className={`w-7 h-7 rounded-md border flex items-center justify-center transition-all ${
           theme === 'dark'
-            ? 'bg-[rgba(14,165,233,.15)] text-cyan-400'
-            : 'text-slate-500 hover:text-slate-300'
+            ? 'border-[#0ea5e9] bg-[rgba(14,165,233,0.1)] text-[#0ea5e9]'
+            : 'border-[#1e3a5f] bg-[#1a2236] text-slate-500 hover:text-slate-300'
         }`}
         title="Fundo escuro"
       >
@@ -27,10 +27,10 @@ export default function ThemeSwitcher({ theme, onChange }: Props) {
       <button
         type="button"
         onClick={() => onChange('light')}
-        className={`w-7 h-7 rounded-md flex items-center justify-center transition-all ${
+        className={`w-7 h-7 rounded-md border flex items-center justify-center transition-all ${
           theme === 'light'
-            ? 'bg-[rgba(14,165,233,.15)] text-cyan-400'
-            : 'text-slate-500 hover:text-slate-300'
+            ? 'border-[#0ea5e9] bg-[rgba(14,165,233,0.1)] text-[#0ea5e9]'
+            : 'border-[#1e3a5f] bg-[#1a2236] text-slate-500 hover:text-slate-300'
         }`}
         title="Fundo claro"
       >

@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import { uploadMediaFiles } from '../actions'
+import { saveMediaMetadata, uploadMediaFiles } from '../actions'
 
 interface UploadZoneProps {
   onUploadComplete: () => Promise<void>
@@ -54,6 +54,26 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
 
       const response = await uploadMediaFiles(formData)
       const failed = response.results.filter((item) => item.error)
+      const pathByName = new Map(response.results.map((item) => [item.name, item.path]))
+
+      await Promise.all(
+        files.map(async (file) => {
+          const uploadedPath = pathByName.get(file.name)
+          if (!uploadedPath || !file.type.startsWith('image/')) return
+
+          const dimensions = await getImageDimensionsFromFile(file)
+          if (!dimensions) return
+
+          await saveMediaMetadata({
+            storage_path: uploadedPath,
+            width: dimensions.width,
+            height: dimensions.height,
+            mime_type: file.type,
+            size_bytes: file.size,
+            original_name: file.name,
+          })
+        })
+      )
 
       if (failed.length) {
         toast.error(`Falha em ${failed.length} arquivo(s).`)
@@ -90,6 +110,7 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
       <input
         ref={inputRef}
         type="file"
+        aria-label="Selecionar arquivos"
         multiple
         className="hidden"
         accept=".png,.jpg,.jpeg,.webp,.svg,.gif,.pdf,.mp4,.webm,image/png,image/jpeg,image/webp,image/svg+xml,image/gif,application/pdf,video/mp4,video/webm"
@@ -117,4 +138,23 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
       </div>
     </div>
   )
+}
+
+async function getImageDimensionsFromFile(file: File): Promise<{ width: number; height: number } | null> {
+  return new Promise((resolve) => {
+    const objectUrl = URL.createObjectURL(file)
+    const img = new Image()
+
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight })
+      URL.revokeObjectURL(objectUrl)
+    }
+
+    img.onerror = () => {
+      resolve(null)
+      URL.revokeObjectURL(objectUrl)
+    }
+
+    img.src = objectUrl
+  })
 }

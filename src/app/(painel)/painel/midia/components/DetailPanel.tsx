@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 
 import DeleteConfirmModal from '@/components/ui/DeleteConfirmModal'
-import { toMediaUrl } from '@/lib/media-url'
+import { toAbsoluteMediaUrl, toMediaUrl } from '@/lib/media-url'
 import { getMediaMetadata, saveMediaMetadata } from '../actions'
 import type { MediaFile } from '../types'
 
@@ -25,6 +25,7 @@ export default function DetailPanel({ file, open, onClose, onDelete }: DetailPan
   })
   const [isLoadingSeo, setIsLoadingSeo] = useState(false)
   const [isSavingSeo, setIsSavingSeo] = useState(false)
+  const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -59,10 +60,43 @@ export default function DetailPanel({ file, open, onClose, onDelete }: DetailPan
     void run()
   }, [file, open])
 
+  useEffect(() => {
+    if (!file) {
+      setDimensions(null)
+      return
+    }
+
+    if (!file.type.startsWith('image/')) {
+      setDimensions(null)
+      return
+    }
+
+    const metadataWidth = file.metadata?.width
+    const metadataHeight = file.metadata?.height
+    if (metadataWidth && metadataHeight) {
+      setDimensions({ width: metadataWidth, height: metadataHeight })
+      return
+    }
+
+    setDimensions(null)
+    const img = new Image()
+    img.onload = () => {
+      setDimensions({ width: img.naturalWidth, height: img.naturalHeight })
+    }
+    img.onerror = () => setDimensions(null)
+    img.src = file.public_url
+
+    return () => {
+      img.onload = null
+      img.onerror = null
+    }
+  }, [file])
+
   if (!open || !file) return null
 
   const isImage = file.type.startsWith('image/') && file.type !== 'image/svg+xml'
   const previewUrl = toMediaUrl(file.public_url)
+  const displayUrl = toAbsoluteMediaUrl(file.public_url)
 
   const handleSaveSeo = async () => {
     setIsSavingSeo(true)
@@ -77,8 +111,8 @@ export default function DetailPanel({ file, open, onClose, onDelete }: DetailPan
         original_name: file.name,
         mime_type: file.type,
         size_bytes: file.size,
-        width: file.metadata?.width,
-        height: file.metadata?.height,
+        width: dimensions?.width ?? file.metadata?.width,
+        height: dimensions?.height ?? file.metadata?.height,
       })
 
       if ('error' in response) {
@@ -121,13 +155,17 @@ export default function DetailPanel({ file, open, onClose, onDelete }: DetailPan
           <Info label="Nome" value={file.name} />
           <Info label="Tipo" value={file.type} />
           <Info label="Tamanho" value={formatBytes(file.size)} />
-          <Info label="Dimensões" value={file.metadata?.width && file.metadata?.height ? `${file.metadata.width}x${file.metadata.height}` : '-'} />
+          {file.type.startsWith('image/') && (
+            <Info
+              label="Dimensões"
+              value={dimensions ? `${dimensions.width} × ${dimensions.height} px` : 'Carregando...'}
+            />
+          )}
           <Info label="Enviado em" value={formatDateTime(file.created_at)} />
         </div>
 
         <div className="space-y-3 mt-5">
-          <CopyField label="URL pública (Supabase)" value={file.public_url} />
-          <CopyField label="URL no domínio" value={previewUrl} />
+          <CopyField label="URL" value={displayUrl} />
           <CopyField label="ID / Path" value={file.path} />
         </div>
 
@@ -139,6 +177,7 @@ export default function DetailPanel({ file, open, onClose, onDelete }: DetailPan
             <div className="space-y-3">
               <SeoField label="Texto alternativo (alt)">
                 <input
+                  aria-label="Texto alternativo"
                   value={seo.alt_text}
                   maxLength={125}
                   onChange={(event) => setSeo((prev) => ({ ...prev, alt_text: event.target.value.slice(0, 125) }))}
@@ -149,6 +188,7 @@ export default function DetailPanel({ file, open, onClose, onDelete }: DetailPan
 
               <SeoField label="Título (title)">
                 <input
+                  aria-label="Título"
                   value={seo.title}
                   onChange={(event) => setSeo((prev) => ({ ...prev, title: event.target.value }))}
                   className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
@@ -157,6 +197,7 @@ export default function DetailPanel({ file, open, onClose, onDelete }: DetailPan
 
               <SeoField label="Descrição">
                 <textarea
+                  aria-label="Descrição"
                   value={seo.description}
                   rows={2}
                   onChange={(event) => setSeo((prev) => ({ ...prev, description: event.target.value }))}
@@ -166,6 +207,7 @@ export default function DetailPanel({ file, open, onClose, onDelete }: DetailPan
 
               <SeoField label="Legenda">
                 <input
+                  aria-label="Legenda"
                   value={seo.caption}
                   onChange={(event) => setSeo((prev) => ({ ...prev, caption: event.target.value }))}
                   className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
@@ -187,7 +229,7 @@ export default function DetailPanel({ file, open, onClose, onDelete }: DetailPan
         <div className="mt-6 flex gap-2">
           <button
             type="button"
-            onClick={() => void copyText(previewUrl, 'URL copiada.')}
+            onClick={() => void copyText(displayUrl, 'URL copiada.')}
             className="flex-1 px-3 py-2 rounded-lg border border-[#1e3a5f] text-[#94a3b8] hover:text-[#0ea5e9] hover:border-cyan-500/40"
           >
             Copiar URL
@@ -239,7 +281,7 @@ function CopyField({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-[#1e3a5f] bg-[#111827] overflow-hidden">
       <div className="px-3 py-2 text-xs text-[#64748b] border-b border-[#1e3a5f]">{label}</div>
       <div className="flex items-center">
-        <input readOnly value={value} className="flex-1 bg-transparent px-3 py-2 text-sm text-[#94a3b8] outline-none" />
+        <input aria-label={label} readOnly value={value} className="flex-1 bg-transparent px-3 py-2 text-sm text-[#94a3b8] outline-none" />
         <button
           type="button"
           onClick={() => void copyText(value, `${label} copiado.`)}

@@ -1,5 +1,6 @@
 import { createServerSupabase } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { DynamicFavicon } from '@/components/layout/DynamicFavicon'
 import { PainelSidebar } from '@/components/layout/PainelSidebar'
 
 export default async function PainelLayout({ children }: { children: React.ReactNode }) {
@@ -20,6 +21,7 @@ export default async function PainelLayout({ children }: { children: React.React
 
   return (
     <div className="flex min-h-screen bg-[#050510]">
+      <DynamicFavicon />
       <PainelSidebar
         userName={profile.name}
         userRole={profile.role === 'admin' ? 'admin' : 'client'}

@@ -10,7 +10,7 @@ import {
   uploadMediaFiles,
 } from '@/app/(painel)/painel/midia/actions'
 import type { MediaFile, MediaMetadata } from '@/app/(painel)/painel/midia/types'
-import { toMediaUrl } from '@/lib/media-url'
+import { toAbsoluteMediaUrl, toMediaUrl } from '@/lib/media-url'
 
 export interface SelectedMedia {
   url: string
@@ -53,6 +53,8 @@ export function MediaPickerModal({
 }: MediaPickerModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const skipAutoSaveRef = useRef(true)
+  const loadedRef = useRef(false)
+  const onCloseRef = useRef(onClose)
   const [tab, setTab] = useState<'gallery' | 'upload'>('gallery')
   const [files, setFiles] = useState<MediaFile[]>([])
   const [metaMap, setMetaMap] = useState<Record<string, MediaMetadata>>({})
@@ -62,6 +64,10 @@ export function MediaPickerModal({
   const [loading, setLoading] = useState(false)
   const [uploadItems, setUploadItems] = useState<UploadItem[]>([])
   const [seo, setSeo] = useState({ alt_text: '', title: '', description: '', caption: '' })
+  const seoAlt = seo.alt_text
+  const seoTitle = seo.title
+  const seoDescription = seo.description
+  const seoCaption = seo.caption
 
   const selectedFile = useMemo(
     () => files.find((file) => file.id === selectedId) ?? null,
@@ -126,15 +132,24 @@ export function MediaPickerModal({
   }, [applySeoFromMetadata])
 
   useEffect(() => {
-    if (!isOpen) return
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  useEffect(() => {
+    if (!isOpen) {
+      loadedRef.current = false
+      return
+    }
+    if (loadedRef.current) return
+    loadedRef.current = true
 
     void loadData()
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') onCloseRef.current()
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [isOpen, loadData, onClose])
+  }, [isOpen, loadData])
 
   useEffect(() => {
     if (!selectedFile) return
@@ -154,10 +169,10 @@ export function MediaPickerModal({
       const response = await saveMediaMetadata({
         storage_path: selectedFile.path,
         bucket: selectedFile.bucket,
-        alt_text: seo.alt_text.slice(0, 125),
-        title: seo.title,
-        description: seo.description,
-        caption: seo.caption,
+        alt_text: seoAlt.slice(0, 125),
+        title: seoTitle,
+        description: seoDescription,
+        caption: seoCaption,
         original_name: selectedFile.name,
         mime_type: selectedFile.type,
         size_bytes: selectedFile.size,
@@ -175,10 +190,10 @@ export function MediaPickerModal({
         [selectedFile.path]: {
           ...(prev[selectedFile.path] ?? buildBaseMetadata(selectedFile.path)),
           storage_path: selectedFile.path,
-          alt_text: seo.alt_text,
-          title: seo.title,
-          description: seo.description,
-          caption: seo.caption,
+          alt_text: seoAlt,
+          title: seoTitle,
+          description: seoDescription,
+          caption: seoCaption,
           mime_type: selectedFile.type,
           size_bytes: selectedFile.size,
         },
@@ -186,7 +201,7 @@ export function MediaPickerModal({
     }, 1000)
 
     return () => clearTimeout(timeout)
-  }, [isOpen, selectedFile, seo])
+  }, [isOpen, selectedFile, seoAlt, seoCaption, seoDescription, seoTitle])
 
   if (!isOpen) return null
 
@@ -214,6 +229,23 @@ export function MediaPickerModal({
 
     const response = await uploadMediaFiles(formData)
     const resultMap = new Map(response.results.map((item) => [item.name, item]))
+
+    await Promise.all(
+      validFiles.map(async (file) => {
+        const result = resultMap.get(file.name)
+        if (!result?.path || result.error || !file.type.startsWith('image/')) return
+        const dimensions = await getImageDimensionsFromFile(file)
+        if (!dimensions) return
+        await saveMediaMetadata({
+          storage_path: result.path,
+          width: dimensions.width,
+          height: dimensions.height,
+          mime_type: file.type,
+          size_bytes: file.size,
+          original_name: file.name,
+        })
+      })
+    )
 
     setUploadItems(
       validFiles.map((file) => {
@@ -261,6 +293,7 @@ export function MediaPickerModal({
               <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
+                    aria-label="Buscar arquivo"
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Buscar arquivo..."
@@ -337,6 +370,7 @@ export function MediaPickerModal({
               <div className="mt-4 lg:hidden border-t border-[#1e3a5f] pt-3 space-y-2">
                 <label className="block text-[10px] font-semibold text-[#64748b] uppercase tracking-wider">Alt ({seo.alt_text.length}/125)</label>
                 <input
+                  aria-label="Alt"
                   value={seo.alt_text}
                   maxLength={125}
                   onChange={(event) => setSeo((prev) => ({ ...prev, alt_text: event.target.value.slice(0, 125) }))}
@@ -344,12 +378,14 @@ export function MediaPickerModal({
                 />
                 <label className="block text-[10px] font-semibold text-[#64748b] uppercase tracking-wider">Título</label>
                 <input
+                  aria-label="Título"
                   value={seo.title}
                   onChange={(event) => setSeo((prev) => ({ ...prev, title: event.target.value }))}
                   className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
                 />
                 <label className="block text-[10px] font-semibold text-[#64748b] uppercase tracking-wider">Descrição</label>
                 <textarea
+                  aria-label="Descrição"
                   rows={2}
                   value={seo.description}
                   onChange={(event) => setSeo((prev) => ({ ...prev, description: event.target.value }))}
@@ -357,6 +393,7 @@ export function MediaPickerModal({
                 />
                 <label className="block text-[10px] font-semibold text-[#64748b] uppercase tracking-wider">Legenda</label>
                 <input
+                  aria-label="Legenda"
                   value={seo.caption}
                   onChange={(event) => setSeo((prev) => ({ ...prev, caption: event.target.value }))}
                   className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
@@ -380,10 +417,12 @@ export function MediaPickerModal({
                   <p className="truncate">{selectedFile.name}</p>
                   <p>{selectedFile.type}</p>
                   <p>{formatBytes(selectedFile.size)}</p>
+                  <p className="break-all text-[11px] text-[#64748b]">{toAbsoluteMediaUrl(selectedFile.public_url)}</p>
                 </div>
                 <div className="border-t border-[#1e3a5f] pt-3 space-y-2">
                   <label className="block text-[10px] font-semibold text-[#64748b] uppercase tracking-wider">Alt ({seo.alt_text.length}/125)</label>
                   <input
+                    aria-label="Alt"
                     value={seo.alt_text}
                     maxLength={125}
                     onChange={(event) => setSeo((prev) => ({ ...prev, alt_text: event.target.value.slice(0, 125) }))}
@@ -391,12 +430,14 @@ export function MediaPickerModal({
                   />
                   <label className="block text-[10px] font-semibold text-[#64748b] uppercase tracking-wider">Título</label>
                   <input
+                    aria-label="Título"
                     value={seo.title}
                     onChange={(event) => setSeo((prev) => ({ ...prev, title: event.target.value }))}
                     className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
                   />
                   <label className="block text-[10px] font-semibold text-[#64748b] uppercase tracking-wider">Descrição</label>
                   <textarea
+                    aria-label="Descrição"
                     rows={2}
                     value={seo.description}
                     onChange={(event) => setSeo((prev) => ({ ...prev, description: event.target.value }))}
@@ -404,6 +445,7 @@ export function MediaPickerModal({
                   />
                   <label className="block text-[10px] font-semibold text-[#64748b] uppercase tracking-wider">Legenda</label>
                   <input
+                    aria-label="Legenda"
                     value={seo.caption}
                     onChange={(event) => setSeo((prev) => ({ ...prev, caption: event.target.value }))}
                     className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
@@ -472,6 +514,7 @@ function UploadDropZone({
       <input
         ref={inputRef}
         type="file"
+        aria-label="Selecionar arquivos para upload"
         multiple
         className="hidden"
         onChange={(event) => onSelect(Array.from(event.target.files ?? []))}
@@ -528,4 +571,23 @@ function buildBaseMetadata(path: string): MediaMetadata {
     created_at: '',
     updated_at: '',
   }
+}
+
+async function getImageDimensionsFromFile(file: File): Promise<{ width: number; height: number } | null> {
+  return new Promise((resolve) => {
+    const objectUrl = URL.createObjectURL(file)
+    const img = new Image()
+
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight })
+      URL.revokeObjectURL(objectUrl)
+    }
+
+    img.onerror = () => {
+      resolve(null)
+      URL.revokeObjectURL(objectUrl)
+    }
+
+    img.src = objectUrl
+  })
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { MediaPickerModal, type SelectedMedia } from './MediaPickerModal'
 
@@ -36,8 +36,9 @@ export function useMediaPicker(options?: UseMediaPickerOptions) {
     setResolve(null)
   }, [resolve])
 
-  const PickerModal = useCallback(
-    () => (
+  const pickerElement = useMemo(
+    () =>
+      isOpen ? (
       <MediaPickerModal
         isOpen={isOpen}
         onClose={handleClose}
@@ -46,9 +47,9 @@ export function useMediaPicker(options?: UseMediaPickerOptions) {
         maxSize={options?.maxSize}
         title={options?.title}
       />
-    ),
+      ) : null,
     [handleClose, handleSelect, isOpen, options?.accept, options?.maxSize, options?.title]
   )
 
-  return { openPicker, PickerModal }
+  return { openPicker, PickerModal: pickerElement }
 }

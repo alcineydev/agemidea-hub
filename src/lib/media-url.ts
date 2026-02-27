@@ -26,6 +26,9 @@ export function toAbsoluteMediaUrl(supabaseUrl: string): string {
   const relative = toMediaUrl(supabaseUrl)
   if (relative.startsWith('http')) return relative
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://agemidea.com.br'
+  const baseUrl =
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://agemidea.com.br')
   return `${baseUrl}${relative}`
 }

@@ -100,7 +100,7 @@ export default function LogoImageMode({ logoImageUrl, logoImageId, onUpdateMulti
           <CopyField label="ID" value={logoImageId} />
         </div>
       )}
-      <PickerModal />
+      {PickerModal}
     </div>
   )
 }

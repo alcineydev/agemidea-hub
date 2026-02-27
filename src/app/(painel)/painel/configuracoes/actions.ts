@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { createServerClient } from '@/lib/supabase/server'
+import { createAdminClient, createServerClient } from '@/lib/supabase/server'
 
 export async function getSettings() {
   const supabase = await createServerClient()
@@ -42,7 +42,7 @@ export async function saveSettings(settings: Record<string, string>) {
 }
 
 export async function uploadSiteImage(formData: FormData) {
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   const file = formData.get('file') as File
   const folder = String(formData.get('folder') ?? '')
 
@@ -66,9 +66,10 @@ export async function uploadSiteImage(formData: FormData) {
   if (error) throw error
 
   const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(fileName)
+  const publicUrl = resolvePublicUrl(urlData.publicUrl, fileName)
 
   return {
-    url: urlData.publicUrl,
+    url: publicUrl,
     id: data.id ?? fileName,
     path: fileName,
   }
@@ -84,4 +85,15 @@ export async function removeSiteImage(folder: string) {
   }
 
   return { success: true }
+}
+
+function resolvePublicUrl(rawUrl: string | undefined, filePath: string): string {
+  if (rawUrl && rawUrl.startsWith('https://')) {
+    return rawUrl
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!baseUrl) return rawUrl ?? ''
+
+  return `${baseUrl}/storage/v1/object/public/site-assets/${filePath}`
 }

@@ -37,6 +37,11 @@ export default function LogoImageMode({ logoImageUrl, logoImageId, onUpdateMulti
       formData.append('file', file)
       formData.append('folder', 'logo')
       const result = await uploadSiteImage(formData)
+
+      if (!result.url) {
+        throw new Error('URL pública da logo não foi retornada.')
+      }
+
       onUpdateMultiple({
         logo_image_url: result.url,
         logo_image_id: result.id,

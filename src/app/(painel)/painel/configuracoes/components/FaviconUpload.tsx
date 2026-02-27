@@ -13,6 +13,7 @@ interface Props {
 export default function FaviconUpload({ faviconUrl, onUpdate }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [hasPreviewError, setHasPreviewError] = useState(false)
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -35,6 +36,12 @@ export default function FaviconUpload({ faviconUrl, onUpdate }: Props) {
       formData.append('file', file)
       formData.append('folder', 'favicon')
       const result = await uploadSiteImage(formData)
+
+      if (!result.url) {
+        throw new Error('URL pública do favicon não foi retornada.')
+      }
+
+      setHasPreviewError(false)
       onUpdate(result.url)
       toast.success('Favicon enviada com sucesso.')
     } catch (error) {
@@ -49,6 +56,7 @@ export default function FaviconUpload({ faviconUrl, onUpdate }: Props) {
     setUploading(true)
     try {
       await removeSiteImage('favicon')
+      setHasPreviewError(false)
       onUpdate('')
       toast.success('Favicon removida.')
     } catch (error) {
@@ -61,9 +69,15 @@ export default function FaviconUpload({ faviconUrl, onUpdate }: Props) {
   return (
     <div className="space-y-4">
       <div className="relative w-20 h-20 rounded-xl border border-[rgba(30,58,95,.35)] bg-[rgba(15,23,42,.6)] flex items-center justify-center overflow-hidden">
-        {faviconUrl ? (
+        {faviconUrl && !hasPreviewError ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={faviconUrl} alt="Favicon" className="w-full h-full object-contain p-3" />
+          <img
+            src={faviconUrl}
+            alt="Favicon"
+            className="w-full h-full object-contain p-3"
+            onError={() => setHasPreviewError(true)}
+            onLoad={() => setHasPreviewError(false)}
+          />
         ) : (
           <div className="flex flex-col items-center gap-1 text-slate-500">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -83,6 +97,7 @@ export default function FaviconUpload({ faviconUrl, onUpdate }: Props) {
 
       <input
         type="file"
+        aria-label="Selecionar favicon"
         accept="image/png,image/svg+xml,image/x-icon,image/ico"
         ref={fileInputRef}
         onChange={handleFileSelect}

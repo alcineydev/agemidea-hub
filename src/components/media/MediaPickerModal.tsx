@@ -332,6 +332,37 @@ export function MediaPickerModal({
                 )}
               </div>
             )}
+
+            {selectedFile && (
+              <div className="mt-4 lg:hidden border-t border-[#1e3a5f] pt-3 space-y-2">
+                <label className="block text-[10px] font-semibold text-[#64748b] uppercase tracking-wider">Alt ({seo.alt_text.length}/125)</label>
+                <input
+                  value={seo.alt_text}
+                  maxLength={125}
+                  onChange={(event) => setSeo((prev) => ({ ...prev, alt_text: event.target.value.slice(0, 125) }))}
+                  className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
+                />
+                <label className="block text-[10px] font-semibold text-[#64748b] uppercase tracking-wider">Título</label>
+                <input
+                  value={seo.title}
+                  onChange={(event) => setSeo((prev) => ({ ...prev, title: event.target.value }))}
+                  className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
+                />
+                <label className="block text-[10px] font-semibold text-[#64748b] uppercase tracking-wider">Descrição</label>
+                <textarea
+                  rows={2}
+                  value={seo.description}
+                  onChange={(event) => setSeo((prev) => ({ ...prev, description: event.target.value }))}
+                  className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
+                />
+                <label className="block text-[10px] font-semibold text-[#64748b] uppercase tracking-wider">Legenda</label>
+                <input
+                  value={seo.caption}
+                  onChange={(event) => setSeo((prev) => ({ ...prev, caption: event.target.value }))}
+                  className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
+                />
+              </div>
+            )}
           </main>
 
           <aside className="hidden lg:block w-[260px] border-l border-[#1e3a5f] p-3 space-y-3 overflow-y-auto">

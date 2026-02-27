@@ -17,6 +17,23 @@ export interface MediaFile {
   }
 }
 
+export interface MediaMetadata {
+  id: string
+  storage_path: string
+  bucket: string
+  alt_text: string
+  title: string
+  description: string
+  caption: string
+  original_name: string
+  mime_type: string
+  size_bytes: number
+  width: number | null
+  height: number | null
+  created_at: string
+  updated_at: string
+}
+
 export type MediaFilter = 'all' | 'images' | 'documents' | 'videos' | 'svg'
 export type ViewMode = 'grid' | 'list'
 

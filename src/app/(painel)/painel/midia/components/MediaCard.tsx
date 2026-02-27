@@ -1,5 +1,6 @@
 'use client'
 
+import { toMediaUrl } from '@/lib/media-url'
 import type { MediaFile } from '../types'
 
 interface MediaCardProps {
@@ -14,6 +15,8 @@ export default function MediaCard({ file, selected, onSelect, onOpenDetail }: Me
   const isSvg = file.type === 'image/svg+xml'
   const isPdf = file.type.includes('pdf')
   const isVideo = file.type.startsWith('video/')
+
+  const previewUrl = toMediaUrl(file.public_url)
 
   return (
     <article
@@ -36,7 +39,7 @@ export default function MediaCard({ file, selected, onSelect, onOpenDetail }: Me
         />
         {isImage ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={file.public_url} alt={file.name} className="w-full h-full object-cover" />
+          <img src={previewUrl} alt={file.name} className="w-full h-full object-cover" />
         ) : (
           <div className="flex flex-col items-center gap-2 text-[#94a3b8]">
             <FileTypeIcon />

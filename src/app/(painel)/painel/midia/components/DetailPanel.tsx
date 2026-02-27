@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 
 import DeleteConfirmModal from '@/components/ui/DeleteConfirmModal'
+import { toMediaUrl } from '@/lib/media-url'
+import { getMediaMetadata, saveMediaMetadata } from '../actions'
 import type { MediaFile } from '../types'
 
 interface DetailPanelProps {
@@ -15,6 +17,14 @@ interface DetailPanelProps {
 
 export default function DetailPanel({ file, open, onClose, onDelete }: DetailPanelProps) {
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [seo, setSeo] = useState({
+    alt_text: '',
+    title: '',
+    description: '',
+    caption: '',
+  })
+  const [isLoadingSeo, setIsLoadingSeo] = useState(false)
+  const [isSavingSeo, setIsSavingSeo] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -26,9 +36,63 @@ export default function DetailPanel({ file, open, onClose, onDelete }: DetailPan
     return () => document.removeEventListener('keydown', handler)
   }, [open, onClose])
 
+  useEffect(() => {
+    if (!open || !file) return
+
+    const run = async () => {
+      setIsLoadingSeo(true)
+      try {
+        const data = await getMediaMetadata(file.path)
+        setSeo({
+          alt_text: data?.alt_text ?? '',
+          title: data?.title ?? '',
+          description: data?.description ?? '',
+          caption: data?.caption ?? '',
+        })
+      } catch {
+        toast.error('Não foi possível carregar os dados de SEO.')
+      } finally {
+        setIsLoadingSeo(false)
+      }
+    }
+
+    void run()
+  }, [file, open])
+
   if (!open || !file) return null
 
   const isImage = file.type.startsWith('image/') && file.type !== 'image/svg+xml'
+  const previewUrl = toMediaUrl(file.public_url)
+
+  const handleSaveSeo = async () => {
+    setIsSavingSeo(true)
+    try {
+      const response = await saveMediaMetadata({
+        storage_path: file.path,
+        bucket: file.bucket,
+        alt_text: seo.alt_text.slice(0, 125),
+        title: seo.title,
+        description: seo.description,
+        caption: seo.caption,
+        original_name: file.name,
+        mime_type: file.type,
+        size_bytes: file.size,
+        width: file.metadata?.width,
+        height: file.metadata?.height,
+      })
+
+      if ('error' in response) {
+        toast.error(response.error)
+        return
+      }
+
+      toast.success('SEO salvo com sucesso.')
+    } catch {
+      toast.error('Erro ao salvar dados de SEO.')
+    } finally {
+      setIsSavingSeo(false)
+    }
+  }
 
   return (
     <>
@@ -44,7 +108,7 @@ export default function DetailPanel({ file, open, onClose, onDelete }: DetailPan
         <div className="rounded-xl border border-[#1e3a5f] bg-[#111827] h-[240px] flex items-center justify-center overflow-hidden">
           {isImage ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={file.public_url} alt={file.name} className="w-full h-full object-contain" />
+            <img src={previewUrl} alt={file.name} className="w-full h-full object-contain" />
           ) : (
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-[#64748b]" strokeWidth="1.5">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -62,14 +126,68 @@ export default function DetailPanel({ file, open, onClose, onDelete }: DetailPan
         </div>
 
         <div className="space-y-3 mt-5">
-          <CopyField label="URL pública" value={file.public_url} />
+          <CopyField label="URL pública (Supabase)" value={file.public_url} />
+          <CopyField label="URL no domínio" value={previewUrl} />
           <CopyField label="ID / Path" value={file.path} />
+        </div>
+
+        <div className="mt-6 border-t border-[#1e3a5f] pt-4">
+          <div className="text-[#0ea5e9] text-xs font-semibold tracking-wider mb-3">SEO DA IMAGEM</div>
+          {isLoadingSeo ? (
+            <div className="text-sm text-[#64748b]">Carregando dados SEO...</div>
+          ) : (
+            <div className="space-y-3">
+              <SeoField label="Texto alternativo (alt)">
+                <input
+                  value={seo.alt_text}
+                  maxLength={125}
+                  onChange={(event) => setSeo((prev) => ({ ...prev, alt_text: event.target.value.slice(0, 125) }))}
+                  className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
+                />
+                <div className="text-[10px] text-[#64748b] text-right">{seo.alt_text.length}/125</div>
+              </SeoField>
+
+              <SeoField label="Título (title)">
+                <input
+                  value={seo.title}
+                  onChange={(event) => setSeo((prev) => ({ ...prev, title: event.target.value }))}
+                  className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
+                />
+              </SeoField>
+
+              <SeoField label="Descrição">
+                <textarea
+                  value={seo.description}
+                  rows={2}
+                  onChange={(event) => setSeo((prev) => ({ ...prev, description: event.target.value }))}
+                  className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
+                />
+              </SeoField>
+
+              <SeoField label="Legenda">
+                <input
+                  value={seo.caption}
+                  onChange={(event) => setSeo((prev) => ({ ...prev, caption: event.target.value }))}
+                  className="w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-sm p-2 text-white outline-none focus:border-[#0ea5e9]"
+                />
+              </SeoField>
+
+              <button
+                type="button"
+                onClick={() => void handleSaveSeo()}
+                disabled={isSavingSeo}
+                className="w-full px-3 py-2 rounded-lg border border-[#1e3a5f] text-[#94a3b8] hover:text-[#0ea5e9] hover:border-cyan-500/40 disabled:opacity-60"
+              >
+                {isSavingSeo ? 'Salvando...' : 'Salvar SEO'}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 flex gap-2">
           <button
             type="button"
-            onClick={() => void copyText(file.public_url, 'URL copiada.')}
+            onClick={() => void copyText(previewUrl, 'URL copiada.')}
             className="flex-1 px-3 py-2 rounded-lg border border-[#1e3a5f] text-[#94a3b8] hover:text-[#0ea5e9] hover:border-cyan-500/40"
           >
             Copiar URL
@@ -95,6 +213,15 @@ export default function DetailPanel({ file, open, onClose, onDelete }: DetailPan
         items={[{ id: file.id, name: file.name }]}
       />
     </>
+  )
+}
+
+function SeoField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <label className="block text-[10px] font-semibold text-[#64748b] uppercase tracking-wider mb-1">{label}</label>
+      {children}
+    </div>
   )
 }
 

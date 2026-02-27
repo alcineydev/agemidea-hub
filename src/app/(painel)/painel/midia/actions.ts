@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import { createAdminClient } from '@/lib/supabase/server'
-import type { MediaFile } from './types'
+import type { MediaFile, MediaMetadata } from './types'
 
 const MEDIA_BUCKET = 'site-assets'
 const KNOWN_FOLDERS = ['favicon', 'logo', 'media', 'uploads']
@@ -97,6 +97,13 @@ export async function uploadMediaFiles(formData: FormData) {
     }
 
     const { data } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path)
+    await upsertMediaMetadata({
+      storage_path: path,
+      original_name: file.name,
+      mime_type: file.type,
+      size_bytes: file.size,
+      bucket: MEDIA_BUCKET,
+    })
     results.push({
       name: file.name,
       path,
@@ -113,12 +120,77 @@ export async function deleteMediaFiles(paths: string[]) {
 
   if (!paths.length) return { success: true }
 
+  await Promise.all(paths.map((path) => deleteMediaMetadata(path)))
+
   const { error } = await supabase.storage.from(MEDIA_BUCKET).remove(paths)
 
   if (error) return { error: error.message }
 
   revalidatePath('/painel/midia')
   return { success: true }
+}
+
+// ═══ METADADOS SEO ═══
+
+export async function getMediaMetadata(storagePath: string) {
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
+    .from('media_metadata')
+    .select('*')
+    .eq('storage_path', storagePath)
+    .single()
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Erro ao buscar metadata:', error)
+  }
+
+  return (data as MediaMetadata | null) ?? null
+}
+
+interface SaveMediaMetadataInput {
+  storage_path: string
+  bucket?: string
+  alt_text?: string
+  title?: string
+  description?: string
+  caption?: string
+  original_name?: string
+  mime_type?: string
+  size_bytes?: number
+  width?: number
+  height?: number
+}
+
+export async function saveMediaMetadata(data: SaveMediaMetadataInput) {
+  const result = await upsertMediaMetadata(data)
+
+  if (result.error) return { error: result.error }
+
+  revalidatePath('/painel/midia')
+  return { success: true }
+}
+
+export async function deleteMediaMetadata(storagePath: string) {
+  const supabase = createAdminClient()
+
+  await supabase
+    .from('media_metadata')
+    .delete()
+    .eq('storage_path', storagePath)
+}
+
+export async function getMediaMetadataBatch(storagePaths: string[]) {
+  if (!storagePaths.length) return []
+
+  const supabase = createAdminClient()
+
+  const { data } = await supabase
+    .from('media_metadata')
+    .select('*')
+    .in('storage_path', storagePaths)
+
+  return (data as MediaMetadata[]) || []
 }
 
 function isStorageFile(file: StorageEntry) {
@@ -152,4 +224,27 @@ function resolvePublicUrl(rawUrl: string | undefined, filePath: string): string 
   if (!baseUrl) return rawUrl ?? ''
 
   return `${baseUrl}/storage/v1/object/public/${MEDIA_BUCKET}/${filePath}`
+}
+
+async function upsertMediaMetadata(data: SaveMediaMetadataInput) {
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from('media_metadata')
+    .upsert(
+      {
+        ...data,
+        bucket: data.bucket || MEDIA_BUCKET,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: 'storage_path',
+      }
+    )
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { success: true }
 }

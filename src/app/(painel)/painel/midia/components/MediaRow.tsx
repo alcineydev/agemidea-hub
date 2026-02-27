@@ -1,5 +1,6 @@
 'use client'
 
+import { toMediaUrl } from '@/lib/media-url'
 import type { MediaFile } from '../types'
 
 interface MediaRowProps {
@@ -11,6 +12,7 @@ interface MediaRowProps {
 
 export default function MediaRow({ file, selected, onSelect, onOpenDetail }: MediaRowProps) {
   const isImage = file.type.startsWith('image/') && file.type !== 'image/svg+xml'
+  const previewUrl = toMediaUrl(file.public_url)
 
   return (
     <tr
@@ -31,7 +33,7 @@ export default function MediaRow({ file, selected, onSelect, onOpenDetail }: Med
           <div className="w-10 h-10 rounded-lg border border-[#1e3a5f] bg-[#0a0f1e] flex items-center justify-center overflow-hidden">
             {isImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={file.public_url} alt={file.name} className="w-full h-full object-cover" />
+              <img src={previewUrl} alt={file.name} className="w-full h-full object-cover" />
             ) : (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-[#64748b]" strokeWidth="1.7">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />

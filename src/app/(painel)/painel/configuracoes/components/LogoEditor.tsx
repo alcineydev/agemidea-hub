@@ -26,7 +26,7 @@ export default function LogoEditor({ settings, onUpdate, onUpdateMultiple }: Pro
         </span>
       </div>
 
-      <div className="inline-flex rounded-lg border border-[rgba(30,58,95,.35)] p-1 bg-[rgba(15,23,42,.8)]">
+      <div className="inline-flex rounded-lg border border-[#1e3a5f] p-1 bg-[#1a2236]">
         <button
           type="button"
           onClick={() => onUpdate('logo_type', 'image')}

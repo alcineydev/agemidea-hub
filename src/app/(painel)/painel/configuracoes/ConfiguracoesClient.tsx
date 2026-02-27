@@ -65,8 +65,8 @@ export default function ConfiguracoesClient({ initialSettings }: Props) {
   }
 
   return (
-    <div className="animate-fade-in">
-      <div className="sticky top-0 z-40 flex items-center justify-between px-8 py-4 border-b border-[rgba(30,58,95,.2)] bg-[rgba(5,5,16,.4)] backdrop-blur-xl">
+    <div className="animate-fade-in flex flex-col h-[calc(100vh-48px)] lg:h-[calc(100vh-64px)] overflow-hidden -mx-6 -my-6 lg:-mx-8 lg:-my-8">
+      <div className="flex-shrink-0 flex items-center justify-between px-4 md:px-8 py-4 border-b border-[rgba(30,58,95,.2)] bg-[#0a0f1e]">
         <div className="flex items-center gap-2 text-sm text-slate-500">
           <span>Painel</span>
           <span className="opacity-40">/</span>
@@ -91,21 +91,18 @@ export default function ConfiguracoesClient({ initialSettings }: Props) {
           <button
             onClick={handleSave}
             disabled={isPending}
-            className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-cyan-500/20 transition-all disabled:opacity-50"
+            className="px-3 md:px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-cyan-500/20 transition-all disabled:opacity-50"
+            title="Salvar Alterações"
           >
-            {isPending ? 'Salvando...' : 'Salvar Alterações'}
+            <span className="hidden md:inline">{isPending ? 'Salvando...' : 'Salvar Alterações'}</span>
+            <span className="md:hidden">{isPending ? '...' : 'Salvar'}</span>
           </button>
         </div>
       </div>
 
-      <div className="px-8 pt-7">
-        <h1 className="text-[22px] font-bold text-white">Configurações</h1>
-        <p className="text-sm text-slate-500">Gerencie a identidade visual e informações da empresa.</p>
-      </div>
-
       <SettingsTabs activeTab={activeTab} onChange={setActiveTab} />
 
-      <div className="px-8 py-7 w-full">
+      <div className="flex-1 overflow-y-auto bg-[#0d1424] px-4 md:px-8 py-4 md:py-7 pb-14">
         {activeTab === 'visual' && (
           <VisualIdentityTab settings={settings} onUpdate={updateSetting} onUpdateMultiple={updateMultiple} />
         )}

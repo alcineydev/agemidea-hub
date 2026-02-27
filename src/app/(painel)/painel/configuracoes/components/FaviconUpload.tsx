@@ -57,7 +57,7 @@ export default function FaviconUpload({ faviconUrl, onUpdate }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start gap-4">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
         <div className="relative w-20 h-20 rounded-xl border border-[rgba(30,58,95,.35)] bg-[rgba(15,23,42,.6)] flex items-center justify-center overflow-hidden">
           {previewUrl && !hasPreviewError ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -75,16 +75,18 @@ export default function FaviconUpload({ faviconUrl, onUpdate }: Props) {
             </svg>
           )}
         </div>
-        <p className="text-sm text-slate-500">Recomendado 512x512px, PNG ou SVG, formato quadrado, fundo transparente.</p>
+        <p className="text-xs leading-relaxed text-[#64748b] text-center sm:text-left">
+          Recomendado 512x512px, PNG ou SVG, formato quadrado, fundo transparente.
+        </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
         <button
           type="button"
           onClick={() => void handleChoose()}
           className="px-3 py-2 rounded-lg border border-[rgba(30,58,95,.35)] text-slate-300 text-sm hover:text-cyan-400 hover:border-cyan-500/40"
         >
-          Escolher favicon
+          Escolher Favicon
         </button>
         {previewUrl && (
           <button

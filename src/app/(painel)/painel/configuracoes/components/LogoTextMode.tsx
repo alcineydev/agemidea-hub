@@ -38,31 +38,36 @@ export default function LogoTextMode({
   const [theme, setTheme] = useState<PreviewTheme>('dark')
 
   return (
-    <div className="space-y-4">
-      <div
-        className={`relative border border-[rgba(30,58,95,.25)] rounded-2xl p-8 min-h-[170px] flex items-center justify-center ${
-          theme === 'dark' ? 'bg-[#050510]' : 'bg-white'
-        }`}
-      >
-        <ThemeSwitcher theme={theme} onChange={setTheme} />
-        <span
-          style={{
-            fontFamily: logoFont || 'Inter',
-            fontSize: `${Number(logoSize || 36)}px`,
-            fontWeight: Number(logoWeight || 800),
-            letterSpacing: logoSpacing || '-0.02em',
-          }}
-          className={
-            theme === 'dark'
-              ? 'bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent'
-              : 'bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent'
-          }
-        >
-          {logoText || 'AGEMIDEA'}
-        </span>
-      </div>
+    <div className="space-y-5">
+      <div className="flex flex-col lg:flex-row gap-5 items-start">
+        <div className="w-full lg:w-[220px] flex-shrink-0">
+          <div
+            className={`w-full aspect-[10/3] rounded-xl border border-[#1e3a5f] flex items-center justify-center ${
+              theme === 'dark' ? 'bg-[#0a0f1e]' : 'bg-[#f8fafc]'
+            }`}
+          >
+            <span
+              style={{
+                fontFamily: logoFont || 'Inter',
+                fontSize: `${Number(logoSize || 36)}px`,
+                fontWeight: Number(logoWeight || 800),
+                letterSpacing: logoSpacing || '-0.02em',
+              }}
+              className={
+                theme === 'dark'
+                  ? 'bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent'
+                  : 'bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent'
+              }
+            >
+              {logoText || 'AGEMIDEA'}
+            </span>
+          </div>
+          <div className="flex justify-end mt-2">
+            <ThemeSwitcher theme={theme} onChange={setTheme} />
+          </div>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="text-sm text-slate-300 space-y-2">
           <span className="block text-slate-400">Texto da Logo</span>
           <input
@@ -132,6 +137,7 @@ export default function LogoTextMode({
             className="w-full bg-[rgba(15,23,42,.8)] border border-[rgba(30,58,95,.35)] rounded-[10px] text-slate-200 text-sm px-3.5 py-2.5 focus:border-cyan-500 focus:shadow-[0_0_0_3px_rgba(14,165,233,.08)] outline-none"
           />
         </label>
+        </div>
       </div>
     </div>
   )

@@ -16,10 +16,11 @@ interface Props {
 }
 
 const cardClass =
-  'bg-[rgba(15,23,42,.6)] border border-[rgba(30,58,95,.25)] rounded-2xl p-7'
+  'bg-[#111827] border border-[#1e3a5f] rounded-xl p-4 md:p-6'
 const inputClass =
-  'w-full bg-[rgba(15,23,42,.8)] border border-[rgba(30,58,95,.35)] rounded-[10px] text-slate-200 text-sm px-3.5 py-2.5 focus:border-cyan-500 focus:shadow-[0_0_0_3px_rgba(14,165,233,.08)] outline-none'
+  'w-full bg-[#1a2236] border border-[#1e3a5f] rounded-lg text-slate-200 text-sm px-3.5 py-2.5 focus:border-[#0ea5e9] outline-none'
 const textareaClass = `${inputClass} min-h-[84px] resize-y`
+const labelClass = 'text-[11px] font-semibold text-[#64748b] uppercase tracking-wider'
 
 const UF_OPTIONS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS',
@@ -47,16 +48,16 @@ export default function CompanyInfoTab({ settings, onUpdate, errors = [] }: Prop
     <div className="space-y-5">
       <section className={cardClass}>
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-semibold text-white">Dados da Empresa</h2>
+          <h2 className="text-[15px] font-semibold text-white">Dados da Empresa</h2>
           <span className="text-[11px] px-2 py-1 rounded-md font-semibold bg-cyan-500/10 text-cyan-400">Público</span>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <label className="text-sm text-slate-300 space-y-2">
-            <span className="text-slate-400">Nome da Empresa *</span>
+            <span className={labelClass}>Nome da Empresa *</span>
             <input value={settings.company_name || ''} onChange={(e) => onUpdate('company_name', e.target.value)} className={inputClass} />
           </label>
           <label className="text-sm text-slate-300 space-y-2">
-            <span className="text-slate-400">CNPJ</span>
+            <span className={labelClass}>CNPJ</span>
             <div data-field="company_cnpj">
               <input
                 value={settings.company_cnpj || ''}
@@ -77,14 +78,14 @@ export default function CompanyInfoTab({ settings, onUpdate, errors = [] }: Prop
             </div>
           </label>
           <label className="text-sm text-slate-300 space-y-2 lg:col-span-2">
-            <span className="text-slate-400">Descrição curta</span>
+            <span className={labelClass}>Descrição curta</span>
             <textarea value={settings.company_description || ''} onChange={(e) => onUpdate('company_description', e.target.value)} className={textareaClass} />
           </label>
         </div>
       </section>
 
       <section className={cardClass}>
-        <h2 className="text-lg font-semibold text-white mb-4">Endereço</h2>
+        <h2 className="text-[15px] font-semibold text-white mb-4">Endereço</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <input placeholder="Logradouro" value={settings.address_street || ''} onChange={(e) => onUpdate('address_street', e.target.value)} className={inputClass} />
           <input placeholder="Complemento" value={settings.address_complement || ''} onChange={(e) => onUpdate('address_complement', e.target.value)} className={inputClass} />
@@ -140,7 +141,7 @@ export default function CompanyInfoTab({ settings, onUpdate, errors = [] }: Prop
       </section>
 
       <section className={cardClass}>
-        <h2 className="text-lg font-semibold text-white mb-4">Contato</h2>
+        <h2 className="text-[15px] font-semibold text-white mb-4">Contato</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div data-field="phone_whatsapp">
             <input
@@ -237,7 +238,7 @@ export default function CompanyInfoTab({ settings, onUpdate, errors = [] }: Prop
       </section>
 
       <section className={cardClass}>
-        <h2 className="text-lg font-semibold text-white mb-4">Horário de Atendimento</h2>
+        <h2 className="text-[15px] font-semibold text-white mb-4">Horário de Funcionamento</h2>
         <BusinessHoursEditor
           hours={hoursValue}
           onChange={(hours) => onUpdate('hours', JSON.stringify(hours))}
@@ -249,7 +250,7 @@ export default function CompanyInfoTab({ settings, onUpdate, errors = [] }: Prop
       </section>
 
       <section className={cardClass}>
-        <h2 className="text-lg font-semibold text-white mb-4">Redes Sociais</h2>
+        <h2 className="text-[15px] font-semibold text-white mb-4">Redes Sociais</h2>
         <SocialLinks values={settings} onUpdate={onUpdate} />
       </section>
     </div>

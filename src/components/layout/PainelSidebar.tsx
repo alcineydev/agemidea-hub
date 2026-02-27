@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
 import { createClient } from '@/lib/supabase/client'
+import { DynamicLogo } from './DynamicLogo'
 
 interface PainelSidebarProps {
   userName: string
@@ -56,15 +57,14 @@ export function PainelSidebar({ userName, userRole }: PainelSidebarProps) {
   return (
     <aside className="hidden lg:flex w-[220px] bg-[#050510] border-r border-[#1e3a5f]/20 flex-col h-screen fixed left-0 top-0 z-50 overflow-visible">
       <div className="px-4 pt-4 pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center text-white text-[12px] font-bold">
-            A
-          </div>
-          <div className="leading-none">
-            <div className="text-[13px] font-bold text-slate-100 tracking-wide">AGEMIDEA</div>
-            <div className="text-[10px] text-slate-600 tracking-[0.16em] uppercase mt-1">Hub</div>
-          </div>
-        </div>
+        <DynamicLogo
+          className="items-center"
+          imgClassName="h-8 w-auto object-contain"
+          fallbackText="AGEMIDEA"
+          fallbackBadge="HUB"
+          showBadge
+          showIconFallback
+        />
       </div>
 
       <nav className="px-2 space-y-1">

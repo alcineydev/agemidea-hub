@@ -11,7 +11,7 @@ interface Props {
 }
 
 const cardClass =
-  'bg-[rgba(15,23,42,.6)] border border-[rgba(30,58,95,.25)] rounded-2xl p-7'
+  'bg-[#111827] border border-[#1e3a5f] rounded-xl p-4 md:p-6'
 
 export default function VisualIdentityTab({ settings, onUpdate, onUpdateMultiple }: Props) {
   return (

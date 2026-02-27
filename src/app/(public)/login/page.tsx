@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, leadSchema, type LoginInput, type LeadInput } from '@/lib/validations'
 import Link from 'next/link'
+import { DynamicLogo } from '@/components/layout/DynamicLogo'
 
 function LoginContent() {
   const [tab, setTab] = useState<'login' | 'interest'>('login')
@@ -156,21 +157,13 @@ function LoginContent() {
         <div className="relative z-10 h-full flex flex-col justify-between p-12">
           <div>
             <Link href="/" className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-11 h-11 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-cyan-500/25">
-                  A
-                </div>
-                <div className="absolute -inset-1 bg-cyan-500/20 rounded-xl blur-sm -z-10" />
-              </div>
-              <div>
-                <span className="text-xl font-bold text-white tracking-tight">AGEMIDEA</span>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
-                  <span className="text-[10px] text-cyan-400/70 uppercase tracking-widest font-medium">
-                    Hub
-                  </span>
-                </div>
-              </div>
+              <DynamicLogo
+                imgClassName="h-12 w-auto object-contain"
+                fallbackText="AGEMIDEA"
+                fallbackBadge="HUB"
+                showBadge
+                showIconFallback
+              />
             </Link>
           </div>
 
@@ -223,18 +216,13 @@ function LoginContent() {
 
         <div className="lg:hidden pt-12 pb-6 relative z-10">
           <Link href="/" className="flex items-center gap-2.5 mb-5">
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-cyan-500/25">
-              A
-            </div>
-            <div>
-              <span className="text-lg font-bold text-white tracking-tight">AGEMIDEA</span>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1 h-1 bg-cyan-400 rounded-full" />
-                <span className="text-[9px] text-cyan-400/70 uppercase tracking-widest font-medium">
-                  Hub
-                </span>
-              </div>
-            </div>
+            <DynamicLogo
+              imgClassName="h-10 w-auto object-contain"
+              fallbackText="AGEMIDEA"
+              fallbackBadge="HUB"
+              showBadge
+              showIconFallback
+            />
           </Link>
           <h1 className="text-xl font-bold text-white leading-tight">
             Transformamos Empresas em{' '}

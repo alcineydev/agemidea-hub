@@ -54,7 +54,13 @@ export async function updateSession(request: NextRequest) {
     }
 
     // Bloquear rotas admin para clientes
-    const adminOnlyRoutes = ['/painel/clientes', '/painel/paginas', '/painel/blog', '/painel/configuracoes']
+    const adminOnlyRoutes = [
+      '/painel/clientes',
+      '/painel/paginas',
+      '/painel/blog',
+      '/painel/configuracoes',
+      '/painel/orcamentos',
+    ]
     const isAdminRoute = adminOnlyRoutes.some((route) => pathname.startsWith(route))
 
     if (isAdminRoute && profile.role !== 'admin') {

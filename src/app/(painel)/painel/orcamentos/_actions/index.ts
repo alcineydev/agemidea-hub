@@ -522,6 +522,61 @@ export async function deleteQuote(id: string) {
   return { success: true }
 }
 
+export async function generateQuotePublicLink(id: string) {
+  const supabase = createAdminClient()
+
+  const { data: current, error: currentError } = await supabase
+    .from('quotes')
+    .select('id, public_token')
+    .eq('id', id)
+    .single()
+
+  if (currentError || !current) return { error: 'Orcamento nao encontrado' }
+  if (current.public_token) return { data: current.public_token }
+
+  const { data: token, error: tokenError } = await supabase.rpc('generate_public_token')
+  if (tokenError || !token) return { error: tokenError?.message ?? 'Nao foi possivel gerar token' }
+
+  const { error: updateError } = await supabase
+    .from('quotes')
+    .update({
+      public_token: token,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+
+  if (updateError) return { error: updateError.message }
+
+  revalidatePath('/painel/orcamentos')
+  revalidatePath(`/painel/orcamentos/${id}`)
+  revalidatePath(`/orcamento/${token}`)
+  return { data: token as string }
+}
+
+export async function revokeQuotePublicLink(id: string) {
+  const supabase = createAdminClient()
+  const { data: current } = await supabase
+    .from('quotes')
+    .select('public_token')
+    .eq('id', id)
+    .single()
+
+  const { error } = await supabase
+    .from('quotes')
+    .update({
+      public_token: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/painel/orcamentos')
+  revalidatePath(`/painel/orcamentos/${id}`)
+  if (current?.public_token) revalidatePath(`/orcamento/${current.public_token}`)
+  return { success: true }
+}
+
 // ---------------------------------------------------------------------------
 // SETTINGS
 // ---------------------------------------------------------------------------

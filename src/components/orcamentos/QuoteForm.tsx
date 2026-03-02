@@ -8,6 +8,8 @@ import { toast } from 'sonner'
 import {
   createQuote,
   deleteQuote,
+  generateQuotePublicLink,
+  revokeQuotePublicLink,
   updateQuote,
   updateQuoteStatus,
 } from '@/app/(painel)/painel/orcamentos/_actions'
@@ -244,6 +246,43 @@ export default function QuoteForm({
     })
   }
 
+  const handleGeneratePublicLink = () => {
+    startTransition(async () => {
+      let ensuredId = quoteId
+      if (!ensuredId) {
+        const saved = await persistQuote()
+        ensuredId = saved?.id ?? null
+      }
+      if (!ensuredId) return
+
+      const result = await generateQuotePublicLink(ensuredId)
+      if (result.error) {
+        toast.error(result.error)
+        return
+      }
+      if (result.data) {
+        setPublicToken(result.data)
+        toast.success('Link publico gerado.')
+      }
+    })
+  }
+
+  const handleRevokePublicLink = () => {
+    if (!quoteId || !publicToken) return
+    const confirmed = window.confirm('Deseja excluir o link publico deste orcamento?')
+    if (!confirmed) return
+
+    startTransition(async () => {
+      const result = await revokeQuotePublicLink(quoteId)
+      if (result.error) {
+        toast.error(result.error)
+        return
+      }
+      setPublicToken(null)
+      toast.success('Link publico removido do banco.')
+    })
+  }
+
   const handleConditionChange = (
     condition: PaymentCondition | null,
     installments: Array<{ label: string; percent: number }>
@@ -457,6 +496,8 @@ export default function QuoteForm({
               publicToken={publicToken}
               disabled={status !== 'draft' || isPending}
               onSend={handleSend}
+              onGenerateLink={handleGeneratePublicLink}
+              onRevokeLink={handleRevokePublicLink}
             />
 
             {status === 'sent' && (

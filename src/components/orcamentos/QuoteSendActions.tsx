@@ -8,6 +8,8 @@ interface QuoteSendActionsProps {
   publicToken?: string | null
   disabled?: boolean
   onSend: () => void
+  onGenerateLink: () => void
+  onRevokeLink: () => void
 }
 
 export default function QuoteSendActions({
@@ -15,6 +17,8 @@ export default function QuoteSendActions({
   publicToken,
   disabled = false,
   onSend,
+  onGenerateLink,
+  onRevokeLink,
 }: QuoteSendActionsProps) {
   const [origin, setOrigin] = useState('')
 
@@ -72,11 +76,32 @@ export default function QuoteSendActions({
         </a>
         <button
           type="button"
+          disabled={!publicToken}
           onClick={() => void handleCopyLink()}
-          className="rounded-lg border border-[#1e3a5f]/30 px-2 py-2 text-center text-xs font-semibold text-slate-300"
+          className="rounded-lg border border-[#1e3a5f]/30 px-2 py-2 text-center text-xs font-semibold text-slate-300 disabled:opacity-40"
         >
           Copiar link
         </button>
+      </div>
+
+      <div className="mt-2">
+        {publicToken ? (
+          <button
+            type="button"
+            onClick={onRevokeLink}
+            className="w-full rounded-lg border border-red-500/20 px-3 py-2 text-xs font-semibold text-red-400"
+          >
+            Excluir link publico
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onGenerateLink}
+            className="w-full rounded-lg border border-cyan-500/30 px-3 py-2 text-xs font-semibold text-cyan-300"
+          >
+            Gerar link publico
+          </button>
+        )}
       </div>
     </section>
   )

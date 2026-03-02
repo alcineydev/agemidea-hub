@@ -59,6 +59,37 @@ function normalizeQuotePayload(input: Record<string, unknown>) {
   }
 }
 
+function getDefaultQuoteSettings(): QuoteSettings {
+  return {
+    id: '',
+    prefix: 'ORC',
+    separator: '-',
+    include_year: true,
+    year_digits: 4,
+    sequential_digits: 3,
+    next_number: 1,
+    logo_url: null,
+    logo_position: 'left',
+    logo_size: 'medium',
+    primary_color: '#0ea5e9',
+    text_color: '#1e293b',
+    bg_color: '#ffffff',
+    footer_text: null,
+    show_page_number: true,
+    company_name: null,
+    company_document: null,
+    company_email: null,
+    company_phone: null,
+    company_address: null,
+    company_website: null,
+    default_observation: null,
+    default_terms: null,
+    default_validity_days: 15,
+    updated_by: null,
+    updated_at: new Date().toISOString(),
+  }
+}
+
 // ---------------------------------------------------------------------------
 // CLIENTS
 // ---------------------------------------------------------------------------
@@ -72,14 +103,20 @@ export async function getClients(search?: string) {
   }
 
   const { data, error } = await query
-  if (error) throw new Error(error.message)
+  if (error || !data) {
+    console.error('Erro ao carregar clientes:', error)
+    return [] as Client[]
+  }
   return (data ?? []) as Client[]
 }
 
 export async function getClientById(id: string) {
   const supabase = await createServerClient()
   const { data, error } = await supabase.from('clients').select('*').eq('id', id).single()
-  if (error) throw new Error(error.message)
+  if (error || !data) {
+    console.error('Erro ao carregar cliente por ID:', error)
+    return null
+  }
   return data as Client
 }
 
@@ -165,7 +202,10 @@ export async function getQuotes(filters?: {
   }
 
   const { data, error, count } = await query
-  if (error) throw new Error(error.message)
+  if (error || !data) {
+    console.error('Erro ao carregar orcamentos:', error)
+    return { data: [] as QuoteListItem[], total: 0 }
+  }
 
   const normalized = (data ?? []).map((row) => {
     const rawClient = (row as { client?: { name: string; email: string | null }[] | { name: string; email: string | null } }).client
@@ -199,7 +239,10 @@ export async function getQuoteById(id: string) {
     .order('sort_order', { referencedTable: 'quote_items', ascending: true })
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error || !data) {
+    console.error('Erro ao carregar orcamento por ID:', error)
+    return null
+  }
   return data as Quote
 }
 
@@ -242,14 +285,27 @@ export async function getQuoteHistory(quoteId: string) {
     .eq('quote_id', quoteId)
     .order('created_at', { ascending: false })
 
-  if (error) throw new Error(error.message)
+  if (error || !data) {
+    console.error('Erro ao carregar historico do orcamento:', error)
+    return [] as QuoteHistory[]
+  }
   return (data ?? []) as QuoteHistory[]
 }
 
 export async function getQuoteStats(): Promise<QuoteStats> {
   const supabase = await createServerClient()
   const { data, error } = await supabase.from('quotes').select('status, total')
-  if (error) throw new Error(error.message)
+  if (error || !data) {
+    console.error('Erro ao carregar estatisticas de orcamentos:', error)
+    return {
+      total: 0,
+      draft: 0,
+      sent: 0,
+      approved: 0,
+      rejected: 0,
+      total_approved_value: 0,
+    }
+  }
 
   const stats: QuoteStats = {
     total: data?.length ?? 0,
@@ -474,17 +530,12 @@ export async function getQuoteSettings() {
   const supabase = await createServerClient()
   const { data, error } = await supabase.from('quote_settings').select('*').limit(1).maybeSingle()
 
-  if (error) throw new Error(error.message)
-  if (data) return data as QuoteSettings
+  if (error || !data) {
+    console.error('Erro ao carregar configuracoes de orcamento:', error)
+    return getDefaultQuoteSettings()
+  }
 
-  const { data: inserted, error: insertError } = await supabase
-    .from('quote_settings')
-    .insert({})
-    .select()
-    .single()
-
-  if (insertError || !inserted) throw new Error(insertError?.message ?? 'Erro ao criar configuracao')
-  return inserted as QuoteSettings
+  return data as QuoteSettings
 }
 
 export async function updateQuoteSettings(formData: Partial<QuoteSettings>) {
@@ -541,8 +592,12 @@ export async function getPaymentConditions() {
     .order('sort_order', { ascending: true })
     .order('name', { ascending: true })
 
-  if (error) throw new Error(error.message)
-  return (data ?? []) as PaymentCondition[]
+  if (error || !data) {
+    console.error('Erro ao carregar condicoes de pagamento:', error)
+    return [] as PaymentCondition[]
+  }
+
+  return data as PaymentCondition[]
 }
 
 export async function createPaymentCondition(formData: Partial<PaymentCondition>) {

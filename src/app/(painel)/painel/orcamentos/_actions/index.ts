@@ -90,12 +90,20 @@ function getDefaultQuoteSettings(): QuoteSettings {
   }
 }
 
+async function getAuthenticatedUserId() {
+  const supabase = await createServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  return user?.id ?? null
+}
+
 // ---------------------------------------------------------------------------
 // CLIENTS
 // ---------------------------------------------------------------------------
 
 export async function getClients(search?: string) {
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   let query = supabase.from('clients').select('*').order('name')
 
   if (search) {
@@ -111,7 +119,7 @@ export async function getClients(search?: string) {
 }
 
 export async function getClientById(id: string) {
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase.from('clients').select('*').eq('id', id).single()
   if (error || !data) {
     console.error('Erro ao carregar cliente por ID:', error)
@@ -125,16 +133,14 @@ export async function createClient(formData: ClientInsert) {
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors }
 
   const payload = normalizeClientPayload(parsed.data)
-  const supabase = await createServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const userId = await getAuthenticatedUserId()
+  const supabase = createAdminClient()
 
   const { data, error } = await supabase
     .from('clients')
     .insert({
       ...payload,
-      created_by: user?.id ?? null,
+      created_by: userId,
     })
     .select()
     .single()
@@ -150,7 +156,7 @@ export async function updateClient(id: string, formData: Partial<ClientInsert>) 
   const parsed = clientSchema.partial().safeParse(formData)
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors }
 
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   const payload = normalizeClientPayload(parsed.data)
   const { data, error } = await supabase
     .from('clients')
@@ -178,7 +184,7 @@ export async function getQuotes(filters?: {
   page?: number
   perPage?: number
 }) {
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   const page = filters?.page ?? 1
   const perPage = filters?.perPage ?? 20
   const from = (page - 1) * perPage
@@ -231,7 +237,7 @@ export async function getQuotes(filters?: {
 }
 
 export async function getQuoteById(id: string) {
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('quotes')
     .select('*, client:clients(*), items:quote_items(*)')
@@ -278,7 +284,7 @@ export async function getPublicQuoteView(token: string) {
 }
 
 export async function getQuoteHistory(quoteId: string) {
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('quote_history')
     .select('*')
@@ -293,7 +299,7 @@ export async function getQuoteHistory(quoteId: string) {
 }
 
 export async function getQuoteStats(): Promise<QuoteStats> {
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase.from('quotes').select('status, total')
   if (error || !data) {
     console.error('Erro ao carregar estatisticas de orcamentos:', error)
@@ -329,10 +335,8 @@ export async function createQuote(formData: QuoteFormInput) {
   const parsed = quoteSchema.safeParse(formData)
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors }
 
-  const supabase = await createServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const userId = await getAuthenticatedUserId()
+  const supabase = createAdminClient()
 
   const { data: quoteNumber, error: quoteNumberError } = await supabase.rpc('generate_quote_number')
   if (quoteNumberError || !quoteNumber) return { error: quoteNumberError?.message ?? 'Erro ao gerar numero' }
@@ -365,8 +369,8 @@ export async function createQuote(formData: QuoteFormInput) {
       observation: quoteData.observation ?? settings?.default_observation ?? null,
       terms: quoteData.terms ?? settings?.default_terms ?? null,
       valid_until: validUntil,
-      created_by: user?.id ?? null,
-      updated_by: user?.id ?? null,
+      created_by: userId,
+      updated_by: userId,
     })
     .select()
     .single()
@@ -390,7 +394,7 @@ export async function createQuote(formData: QuoteFormInput) {
   await supabase.from('quote_history').insert({
     quote_id: quote.id,
     to_status: 'draft',
-    changed_by: user?.id ?? null,
+    changed_by: userId,
   })
 
   revalidatePath('/painel/orcamentos')
@@ -403,10 +407,8 @@ export async function updateQuote(id: string, formData: QuoteFormInput) {
   const parsed = quoteSchema.safeParse(formData)
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors }
 
-  const supabase = await createServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const userId = await getAuthenticatedUserId()
+  const supabase = createAdminClient()
 
   const { data: current } = await supabase.from('quotes').select('status').eq('id', id).single()
   if (!current) return { error: 'Orcamento nao encontrado' }
@@ -419,7 +421,7 @@ export async function updateQuote(id: string, formData: QuoteFormInput) {
     .from('quotes')
     .update({
       ...quoteData,
-      updated_by: user?.id ?? null,
+      updated_by: userId,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
@@ -455,10 +457,8 @@ export async function updateQuoteStatus(
   newStatus: QuoteStatus,
   options?: { rejection_reason?: string; ip_address?: string | null }
 ) {
-  const supabase = await createServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const userId = await getAuthenticatedUserId()
+  const supabase = createAdminClient()
 
   const { data: current } = await supabase
     .from('quotes')
@@ -483,7 +483,7 @@ export async function updateQuoteStatus(
   const payload: Record<string, string | QuoteStatus | null> = {
     status: newStatus,
     updated_at: now,
-    updated_by: user?.id ?? null,
+    updated_by: userId,
     sent_at: newStatus === 'sent' ? now : null,
     approved_at: newStatus === 'approved' ? now : null,
     rejected_at: newStatus === 'rejected' ? now : null,
@@ -497,7 +497,7 @@ export async function updateQuoteStatus(
     quote_id: id,
     from_status: current.status,
     to_status: newStatus,
-    changed_by: user?.id ?? null,
+    changed_by: userId,
     notes: emptyToNull(options?.rejection_reason),
     ip_address: options?.ip_address ?? null,
   })
@@ -509,7 +509,7 @@ export async function updateQuoteStatus(
 }
 
 export async function deleteQuote(id: string) {
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   const { data: quote } = await supabase.from('quotes').select('status').eq('id', id).single()
 
   if (!quote) return { error: 'Orcamento nao encontrado' }
@@ -527,7 +527,7 @@ export async function deleteQuote(id: string) {
 // ---------------------------------------------------------------------------
 
 export async function getQuoteSettings() {
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase.from('quote_settings').select('*').limit(1).maybeSingle()
 
   if (error || !data) {
@@ -542,15 +542,13 @@ export async function updateQuoteSettings(formData: Partial<QuoteSettings>) {
   const parsed = quoteSettingsSchema.partial().safeParse(formData)
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors }
 
-  const supabase = await createServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const userId = await getAuthenticatedUserId()
+  const supabase = createAdminClient()
 
   const { data: existing } = await supabase.from('quote_settings').select('id').limit(1).maybeSingle()
   const payload = {
     ...parsed.data,
-    updated_by: user?.id ?? null,
+    updated_by: userId,
     updated_at: new Date().toISOString(),
   }
 
@@ -585,7 +583,7 @@ export async function updateQuoteSettings(formData: Partial<QuoteSettings>) {
 // ---------------------------------------------------------------------------
 
 export async function getPaymentConditions() {
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('payment_conditions')
     .select('*')
@@ -604,7 +602,7 @@ export async function createPaymentCondition(formData: Partial<PaymentCondition>
   const parsed = paymentConditionSchema.safeParse(formData)
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors }
 
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('payment_conditions')
     .insert(parsed.data)
@@ -620,7 +618,7 @@ export async function updatePaymentCondition(id: string, formData: Partial<Payme
   const parsed = paymentConditionSchema.partial().safeParse(formData)
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors }
 
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('payment_conditions')
     .update(parsed.data)
@@ -634,7 +632,7 @@ export async function updatePaymentCondition(id: string, formData: Partial<Payme
 }
 
 export async function deletePaymentCondition(id: string) {
-  const supabase = await createServerClient()
+  const supabase = createAdminClient()
   const { error } = await supabase.from('payment_conditions').delete().eq('id', id)
   if (error) return { error: error.message }
   revalidatePath('/painel/orcamentos/configuracao')

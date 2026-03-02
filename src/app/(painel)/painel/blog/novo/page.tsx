@@ -1,8 +1,11 @@
-export default function NovoArtigoPage() {
-  return (
-    <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold text-white mb-2">➕ Novo Artigo</h1>
-      <p className="text-gray-500">Em construção — será implementado no próximo prompt.</p>
-    </div>
-  )
+import { getCategories, getTags } from '@/actions/blog'
+import BlogPostForm from '@/components/blog/blog-post-form'
+
+export default async function NovoArtigoPage() {
+  const [categoriesResult, tagsResult] = await Promise.all([getCategories(), getTags()])
+
+  const categories = categoriesResult.success && categoriesResult.data ? categoriesResult.data : []
+  const tags = tagsResult.success && tagsResult.data ? tagsResult.data : []
+
+  return <BlogPostForm categories={categories} tags={tags} />
 }

@@ -226,6 +226,9 @@ export interface BlogCategory {
   slug: string
   description: string | null
   color: string
+  meta_title: string | null
+  meta_description: string | null
+  cover_image_url: string | null
   order_index: number
   created_at: string
   posts_count?: number
@@ -236,6 +239,9 @@ export interface BlogCategoryInsert {
   slug: string
   description?: string | null
   color?: string
+  meta_title?: string | null
+  meta_description?: string | null
+  cover_image_url?: string | null
   order_index?: number
 }
 
@@ -262,11 +268,16 @@ export interface BlogPost {
   excerpt: string | null
   content: string
   cover_image_url: string | null
+  cover_image_alt: string | null
   category_id: string | null
   author_id: string
   status: PostStatus
   meta_title: string | null
   meta_description: string | null
+  og_title: string | null
+  og_description: string | null
+  og_image_url: string | null
+  focus_keyword: string | null
   published_at: string | null
   scheduled_for: string | null
   views_count: number
@@ -283,11 +294,17 @@ export interface BlogPostInsert {
   excerpt?: string | null
   content?: string
   cover_image_url?: string | null
+  cover_image_alt?: string | null
   category_id?: string | null
   author_id: string
   status?: PostStatus
   meta_title?: string | null
   meta_description?: string | null
+  og_title?: string | null
+  og_description?: string | null
+  og_image_url?: string | null
+  focus_keyword?: string | null
+  published_at?: string | null
   scheduled_for?: string | null
   tag_ids?: string[]
 }
@@ -297,11 +314,16 @@ export interface BlogPostUpdate {
   slug?: string
   excerpt?: string | null
   content?: string
- cover_image_url?: string | null
+  cover_image_url?: string | null
+  cover_image_alt?: string | null
   category_id?: string | null
   status?: PostStatus
   meta_title?: string | null
   meta_description?: string | null
+  og_title?: string | null
+  og_description?: string | null
+  og_image_url?: string | null
+  focus_keyword?: string | null
   published_at?: string | null
   scheduled_for?: string | null
   tag_ids?: string[]

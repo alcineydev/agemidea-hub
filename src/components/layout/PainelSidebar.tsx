@@ -21,15 +21,18 @@ export function PainelSidebar({ userName, userRole }: PainelSidebarProps) {
   const pathname = usePathname()
   const [flyoutOpen, setFlyoutOpen] = useState(false)
   const [quotesFlyoutOpen, setQuotesFlyoutOpen] = useState(false)
+  const [blogFlyoutOpen, setBlogFlyoutOpen] = useState(false)
   const [configFlyoutOpen, setConfigFlyoutOpen] = useState(false)
   const flyoutRef = useRef<HTMLDivElement>(null)
   const quotesFlyoutRef = useRef<HTMLDivElement>(null)
+  const blogFlyoutRef = useRef<HTMLDivElement>(null)
   const configFlyoutRef = useRef<HTMLDivElement>(null)
 
   const isAdmin = userRole === 'admin'
+  const isBlogRoute = pathname.startsWith('/painel/blog')
 
   useEffect(() => {
-    if (!flyoutOpen && !quotesFlyoutOpen && !configFlyoutOpen) return
+    if (!flyoutOpen && !quotesFlyoutOpen && !blogFlyoutOpen && !configFlyoutOpen) return
     const handler = (event: MouseEvent) => {
       if (flyoutRef.current && !flyoutRef.current.contains(event.target as Node)) {
         setFlyoutOpen(false)
@@ -37,13 +40,16 @@ export function PainelSidebar({ userName, userRole }: PainelSidebarProps) {
       if (quotesFlyoutRef.current && !quotesFlyoutRef.current.contains(event.target as Node)) {
         setQuotesFlyoutOpen(false)
       }
+      if (blogFlyoutRef.current && !blogFlyoutRef.current.contains(event.target as Node)) {
+        setBlogFlyoutOpen(false)
+      }
       if (configFlyoutRef.current && !configFlyoutRef.current.contains(event.target as Node)) {
         setConfigFlyoutOpen(false)
       }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [flyoutOpen, quotesFlyoutOpen, configFlyoutOpen])
+  }, [flyoutOpen, quotesFlyoutOpen, blogFlyoutOpen, configFlyoutOpen])
 
   const baseItemClass =
     'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13.5px] font-medium whitespace-nowrap transition-all duration-150'
@@ -241,15 +247,64 @@ export function PainelSidebar({ userName, userRole }: PainelSidebarProps) {
               Clientes
             </Link>
 
-            <Link href="/painel/blog" className={getItemClass(pathname.startsWith('/painel/blog'))}>
-              <NavIcon active={pathname.startsWith('/painel/blog')}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                  <path d="M12 20h9" />
-                  <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+            <div ref={blogFlyoutRef} className="relative z-[200]">
+              <button
+                onClick={() => setBlogFlyoutOpen((prev) => !prev)}
+                className={`w-full ${getItemClass(isBlogRoute)}`}
+              >
+                <NavIcon active={isBlogRoute}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  </svg>
+                </NavIcon>
+                Blog
+                <svg className="ml-auto w-3.5 h-3.5 opacity-30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <polyline points="9 18 15 12 9 6" />
                 </svg>
-              </NavIcon>
-              Blog
-            </Link>
+              </button>
+
+              {(blogFlyoutOpen || isBlogRoute) && (
+                <div className="absolute left-[calc(100%+8px)] top-[-6px] w-[210px] bg-[#0c1020] border border-[#1e3a5f]/30 rounded-[10px] p-1.5 shadow-[0_8px_32px_rgba(0,0,0,.5)] z-[999]">
+                  <div className="text-[10px] font-bold text-slate-700 tracking-wider uppercase px-2.5 pt-2 pb-1.5">Blog</div>
+                  <Link
+                    href="/painel/blog/novo"
+                    onClick={() => setBlogFlyoutOpen(false)}
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-md text-[13px] text-slate-500 hover:text-slate-300 hover:bg-[#1e3a5f]/[.15] transition-all"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M12 5v14" />
+                      <path d="M5 12h14" />
+                    </svg>
+                    Criar Artigo
+                  </Link>
+                  <Link
+                    href="/painel/blog"
+                    onClick={() => setBlogFlyoutOpen(false)}
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-md text-[13px] text-slate-500 hover:text-slate-300 hover:bg-[#1e3a5f]/[.15] transition-all"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M4 6h16" />
+                      <path d="M4 12h16" />
+                      <path d="M4 18h16" />
+                    </svg>
+                    Todos os Artigos
+                  </Link>
+                  <Link
+                    href="/painel/blog/categorias"
+                    onClick={() => setBlogFlyoutOpen(false)}
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-md text-[13px] text-slate-500 hover:text-slate-300 hover:bg-[#1e3a5f]/[.15] transition-all"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M4 6h16" />
+                      <path d="M8 12h8" />
+                      <path d="M10 18h4" />
+                    </svg>
+                    Categorias
+                  </Link>
+                </div>
+              )}
+            </div>
           </>
         )}
 

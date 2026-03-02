@@ -1,8 +1,9 @@
-export default function CategoriasPage() {
-  return (
-    <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold text-white mb-2">🏷️ Categorias e Tags</h1>
-      <p className="text-gray-500">Em construção — será implementado no próximo prompt.</p>
-    </div>
-  )
+import { getCategories } from '@/actions/blog'
+import BlogCategoriesManager from '@/components/blog/blog-categories-manager'
+
+export default async function CategoriasPage() {
+  const categoriesResult = await getCategories()
+  const categories = categoriesResult.success && categoriesResult.data ? categoriesResult.data : []
+
+  return <BlogCategoriesManager categories={categories} />
 }

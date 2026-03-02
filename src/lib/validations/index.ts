@@ -1,46 +1,46 @@
-import { z } from 'zod'
+﻿import { z } from 'zod'
 
-// ── AUTH ──
+// â”€â”€ AUTH â”€â”€
 
 export const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Mínimo 6 caracteres'),
+  email: z.string().email('Email invÃ¡lido'),
+  password: z.string().min(6, 'MÃ­nimo 6 caracteres'),
 })
 
-// ── LEADS / PRÉ-CADASTRO ──
+// â”€â”€ LEADS / PRÃ‰-CADASTRO â”€â”€
 
 export const leadSchema = z.object({
-  name: z.string().min(2, 'Nome obrigatório'),
-  email: z.string().email('Email inválido'),
+  name: z.string().min(2, 'Nome obrigatÃ³rio'),
+  email: z.string().email('Email invÃ¡lido'),
   phone: z.string().optional(),
   company: z.string().optional(),
   message: z.string().optional(),
   service_interest: z.string().optional(),
 })
 
-// ── CLIENTES ──
+// â”€â”€ CLIENTES â”€â”€
 
 export const clientSchema = z.object({
-  name: z.string().min(2, 'Nome obrigatório'),
-  email: z.string().email('Email inválido'),
+  name: z.string().min(2, 'Nome obrigatÃ³rio'),
+  email: z.string().email('Email invÃ¡lido'),
   phone: z.string().optional(),
   company: z.string().optional(),
-  password: z.string().min(6, 'Mínimo 6 caracteres'),
+  password: z.string().min(6, 'MÃ­nimo 6 caracteres'),
 })
 
 export const clientUpdateSchema = z.object({
-  name: z.string().min(2, 'Nome obrigatório').optional(),
-  email: z.string().email('Email inválido').optional(),
+  name: z.string().min(2, 'Nome obrigatÃ³rio').optional(),
+  email: z.string().email('Email invÃ¡lido').optional(),
   phone: z.string().optional(),
   company: z.string().optional(),
   is_active: z.boolean().optional(),
 })
 
-// ── PROJETOS ──
+// â”€â”€ PROJETOS â”€â”€
 
 export const projectSchema = z.object({
-  client_id: z.string().uuid('Cliente obrigatório'),
-  title: z.string().min(2, 'Título obrigatório'),
+  client_id: z.string().uuid('Cliente obrigatÃ³rio'),
+  title: z.string().min(2, 'TÃ­tulo obrigatÃ³rio'),
   description: z.string().optional(),
   service_type: z.string().optional(),
   start_date: z.string().optional(),
@@ -61,25 +61,25 @@ export const projectUpdateSchema = z.object({
   progress: z.number().min(0).max(100).optional(),
 })
 
-// ── ETAPAS DO PROJETO ──
+// â”€â”€ ETAPAS DO PROJETO â”€â”€
 
 export const stageSchema = z.object({
   project_id: z.string().uuid(),
-  title: z.string().min(2, 'Título obrigatório'),
+  title: z.string().min(2, 'TÃ­tulo obrigatÃ³rio'),
   description: z.string().optional(),
   order_index: z.number().optional(),
 })
 
-// ── PÁGINAS (CMS) ──
+// â”€â”€ PÃGINAS (CMS) â”€â”€
 
 export const pageSchema = z.object({
-  title: z.string().min(2, 'Título obrigatório'),
+  title: z.string().min(2, 'TÃ­tulo obrigatÃ³rio'),
   slug: z
     .string()
-    .min(2, 'Slug obrigatório')
+    .min(2, 'Slug obrigatÃ³rio')
     .regex(
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      'Slug inválido (use letras minúsculas, números e hífens)'
+      'Slug invÃ¡lido (use letras minÃºsculas, nÃºmeros e hÃ­fens)'
     ),
   html_content: z.string().optional().default(''),
   css_content: z.string().optional().default(''),
@@ -94,7 +94,7 @@ export const pageSchema = z.object({
 
 export const pageUpdateSchema = pageSchema.partial()
 
-// ── BLOG CATEGORIAS ──
+// â”€â”€ BLOG CATEGORIAS â”€â”€
 
 export const blogCategorySchema = z.object({
   name: z.string().min(2, 'Nome obrigatório'),
@@ -104,56 +104,65 @@ export const blogCategorySchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug inválido'),
   description: z.string().optional(),
   color: z.string().optional().default('#10B981'),
+  meta_title: z.string().max(70).optional(),
+  meta_description: z.string().max(170).optional(),
+  cover_image_url: z.string().url().optional().or(z.literal('')),
 })
-
-// ── BLOG TAGS ──
+// ── BLOG TAGS â”€â”€
 
 export const blogTagSchema = z.object({
-  name: z.string().min(1, 'Nome obrigatório'),
+  name: z.string().min(1, 'Nome obrigatÃ³rio'),
   slug: z
     .string()
-    .min(1, 'Slug obrigatório')
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug inválido'),
+    .min(1, 'Slug obrigatÃ³rio')
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug invÃ¡lido'),
 })
 
-// ── BLOG POSTS ──
+// â”€â”€ BLOG POSTS â”€â”€
 
 export const blogPostSchema = z.object({
-  title: z.string().min(2, 'Título obrigatório'),
+  title: z.string().min(3, 'Título deve ter no mínimo 3 caracteres').max(200),
   slug: z
     .string()
-    .min(2, 'Slug obrigatório')
+    .min(3, 'Slug obrigatório')
+    .max(200)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug inválido'),
-  excerpt: z.string().optional(),
-  content: z.string().optional().default(''),
+  excerpt: z.string().max(500).optional(),
+  content: z.string().min(1, 'Conteúdo é obrigatório'),
   cover_image_url: z.string().url().optional().or(z.literal('')),
+  cover_image_alt: z.string().max(200).optional(),
   category_id: z.string().uuid().optional().or(z.literal('')),
-  status: z.enum(['rascunho', 'publicado', 'agendado', 'arquivado']).optional(),
-  meta_title: z.string().optional(),
-  meta_description: z.string().optional(),
+  status: z.enum(['rascunho', 'publicado', 'agendado', 'arquivado']),
+  meta_title: z.string().max(70).optional(),
+  meta_description: z.string().max(170).optional(),
+  focus_keyword: z.string().max(50).optional(),
+  og_title: z.string().max(70).optional(),
+  og_description: z.string().max(200).optional(),
+  og_image_url: z.string().url().optional().or(z.literal('')),
+  published_at: z.string().optional(),
   scheduled_for: z.string().optional(),
   tag_ids: z.array(z.string().uuid()).optional(),
 })
 
 export const blogPostUpdateSchema = blogPostSchema.partial()
 
-// ── SUPORTE ──
+// â”€â”€ SUPORTE â”€â”€
 
 export const ticketSchema = z.object({
-  subject: z.string().min(2, 'Assunto obrigatório'),
-  message: z.string().min(2, 'Mensagem obrigatória'),
+  subject: z.string().min(2, 'Assunto obrigatÃ³rio'),
+  message: z.string().min(2, 'Mensagem obrigatÃ³ria'),
   priority: z.enum(['baixa', 'media', 'alta', 'urgente']).optional(),
 })
 
 export const messageSchema = z.object({
   ticket_id: z.string().uuid(),
-  content: z.string().min(1, 'Mensagem obrigatória'),
+  content: z.string().min(1, 'Mensagem obrigatÃ³ria'),
   type: z.enum(['text', 'file', 'system']).optional(),
   file_url: z.string().optional(),
   file_name: z.string().optional(),
 })
 
-// ── CONFIGURAÇÕES ──
+// â”€â”€ CONFIGURAÃ‡Ã•ES â”€â”€
 
 export const siteSettingsSchema = z.object({
   name: z.string().min(1),
@@ -165,7 +174,7 @@ export const siteSettingsSchema = z.object({
   whatsapp: z.string().optional(),
 })
 
-// ── TYPES INFERIDOS ──
+// â”€â”€ TYPES INFERIDOS â”€â”€
 
 export type LoginInput = z.infer<typeof loginSchema>
 export type LeadInput = z.infer<typeof leadSchema>
@@ -177,3 +186,4 @@ export type BlogTagInput = z.infer<typeof blogTagSchema>
 export type BlogPostInput = z.infer<typeof blogPostSchema>
 export type TicketInput = z.infer<typeof ticketSchema>
 export type MessageInput = z.infer<typeof messageSchema>
+

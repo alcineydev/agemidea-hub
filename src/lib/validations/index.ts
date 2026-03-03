@@ -1,5 +1,19 @@
 ﻿import { z } from 'zod'
 
+const urlOrRelativePath = z
+  .string()
+  .trim()
+  .refine((value) => {
+    if (!value) return true
+    if (value.startsWith('/')) return true
+    try {
+      new URL(value)
+      return true
+    } catch {
+      return false
+    }
+  }, 'URL inválida')
+
 // â”€â”€ AUTH â”€â”€
 
 export const loginSchema = z.object({
@@ -106,7 +120,7 @@ export const blogCategorySchema = z.object({
   color: z.string().optional().default('#10B981'),
   meta_title: z.string().max(70).optional(),
   meta_description: z.string().max(170).optional(),
-  cover_image_url: z.string().url().optional().or(z.literal('')),
+  cover_image_url: urlOrRelativePath.optional().or(z.literal('')),
 })
 // ── BLOG TAGS â”€â”€
 
@@ -129,7 +143,7 @@ export const blogPostSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug inválido'),
   excerpt: z.string().max(500).optional(),
   content: z.string().min(1, 'Conteúdo é obrigatório'),
-  cover_image_url: z.string().url().optional().or(z.literal('')),
+  cover_image_url: urlOrRelativePath.optional().or(z.literal('')),
   cover_image_alt: z.string().max(200).optional(),
   category_id: z.string().uuid().optional().or(z.literal('')),
   status: z.enum(['rascunho', 'publicado', 'agendado', 'arquivado']),
@@ -138,7 +152,7 @@ export const blogPostSchema = z.object({
   focus_keyword: z.string().max(50).optional(),
   og_title: z.string().max(70).optional(),
   og_description: z.string().max(200).optional(),
-  og_image_url: z.string().url().optional().or(z.literal('')),
+  og_image_url: urlOrRelativePath.optional().or(z.literal('')),
   published_at: z.string().optional(),
   scheduled_for: z.string().optional(),
   tag_ids: z.array(z.string().uuid()).optional(),
@@ -186,4 +200,5 @@ export type BlogTagInput = z.infer<typeof blogTagSchema>
 export type BlogPostInput = z.infer<typeof blogPostSchema>
 export type TicketInput = z.infer<typeof ticketSchema>
 export type MessageInput = z.infer<typeof messageSchema>
+
 

@@ -32,6 +32,10 @@ export function PainelSidebar({ userName, userRole }: PainelSidebarProps) {
   const isBlogRoute = pathname.startsWith('/painel/blog')
 
   useEffect(() => {
+    if (isBlogRoute) setBlogFlyoutOpen(true)
+  }, [isBlogRoute])
+
+  useEffect(() => {
     if (!flyoutOpen && !quotesFlyoutOpen && !blogFlyoutOpen && !configFlyoutOpen) return
     const handler = (event: MouseEvent) => {
       if (flyoutRef.current && !flyoutRef.current.contains(event.target as Node)) {
@@ -264,7 +268,7 @@ export function PainelSidebar({ userName, userRole }: PainelSidebarProps) {
                 </svg>
               </button>
 
-              {(blogFlyoutOpen || isBlogRoute) && (
+              {blogFlyoutOpen && (
                 <div className="absolute left-[calc(100%+8px)] top-[-6px] w-[210px] bg-[#0c1020] border border-[#1e3a5f]/30 rounded-[10px] p-1.5 shadow-[0_8px_32px_rgba(0,0,0,.5)] z-[999]">
                   <div className="text-[10px] font-bold text-slate-700 tracking-wider uppercase px-2.5 pt-2 pb-1.5">Blog</div>
                   <Link

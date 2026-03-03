@@ -7,16 +7,17 @@ interface BlogContentEditorProps {
   onChange: (value: string) => void
 }
 
-type EditorTab = 'visual' | 'html' | 'markdown'
+type EditorTab = 'simple' | 'visual' | 'html' | 'markdown'
 
 const tabs: Array<{ id: EditorTab; label: string }> = [
+  { id: 'simple', label: 'Texto Simples' },
   { id: 'visual', label: 'Editor Visual' },
   { id: 'html', label: 'HTML' },
   { id: 'markdown', label: 'Markdown' },
 ]
 
 export default function BlogContentEditor({ value, onChange }: BlogContentEditorProps) {
-  const [activeTab, setActiveTab] = useState<EditorTab>('html')
+  const [activeTab, setActiveTab] = useState<EditorTab>('simple')
 
   const toolbarButtons = useMemo(
     () => ['B', 'I', 'U', 'S', 'H1', 'H2', 'H3', 'Link', 'Img', 'Video', 'Lista', 'Num', 'Quote', 'Code', '---'],
@@ -62,6 +63,13 @@ export default function BlogContentEditor({ value, onChange }: BlogContentEditor
           <div className="flex min-h-[320px] items-center justify-center rounded-lg border border-dashed border-[#1e1e2a] bg-[#0a0a0f] p-5 text-center text-sm text-[#71717a]">
             Editor visual em breve. Use HTML ou Markdown no momento.
           </div>
+        ) : activeTab === 'simple' ? (
+          <textarea
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder="Escreva seu texto aqui..."
+            className="min-h-[320px] w-full rounded-lg border border-[#1e1e2a] bg-[#0a0a0f] p-3 text-sm text-[#e4e4e7] outline-none focus:border-cyan-500/50"
+          />
         ) : (
           <textarea
             value={value}

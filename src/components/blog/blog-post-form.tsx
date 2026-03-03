@@ -88,6 +88,21 @@ function toIso(value: string) {
   return date.toISOString()
 }
 
+function normalizeImageUrl(value?: string) {
+  if (!value) return undefined
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed
+
+  if (trimmed.startsWith('/')) {
+    if (typeof window !== 'undefined') return `${window.location.origin}${trimmed}`
+    return trimmed
+  }
+
+  return trimmed
+}
+
 const inputClass =
   'w-full rounded-lg border border-[#1e1e2a] bg-[#0a0a0f] px-3 py-2 text-sm text-[#e4e4e7] outline-none focus:border-cyan-500/50'
 
@@ -155,7 +170,7 @@ export default function BlogPostForm({ post, categories: initialCategories, tags
 
     setForm((prev) => ({
       ...prev,
-      cover_image_url: selected.mediaUrl || selected.url,
+      cover_image_url: selected.url || selected.mediaUrl,
       cover_image_alt: prev.cover_image_alt || selected.alt_text || selected.title || '',
     }))
   }
@@ -166,7 +181,7 @@ export default function BlogPostForm({ post, categories: initialCategories, tags
 
     setForm((prev) => ({
       ...prev,
-      og_image_url: selected.mediaUrl || selected.url,
+      og_image_url: selected.url || selected.mediaUrl,
     }))
   }
 
@@ -232,7 +247,7 @@ export default function BlogPostForm({ post, categories: initialCategories, tags
         slug,
         excerpt: form.excerpt.trim() || undefined,
         content: form.content,
-        cover_image_url: form.cover_image_url.trim() || undefined,
+        cover_image_url: normalizeImageUrl(form.cover_image_url),
         cover_image_alt: form.cover_image_alt.trim() || undefined,
         category_id: form.category_id || undefined,
         status: targetStatus,
@@ -241,7 +256,7 @@ export default function BlogPostForm({ post, categories: initialCategories, tags
         focus_keyword: form.focus_keyword.trim() || undefined,
         og_title: form.og_title.trim() || undefined,
         og_description: form.og_description.trim() || undefined,
-        og_image_url: form.og_image_url.trim() || undefined,
+        og_image_url: normalizeImageUrl(form.og_image_url),
         published_at: toIso(form.published_at),
         scheduled_for: toIso(form.scheduled_for),
         tag_ids: selectedTagIds,

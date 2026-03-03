@@ -33,6 +33,18 @@ const palette = ['#0ea5e9', '#22c55e', '#a855f7', '#f59e0b', '#ef4444', '#f97316
 const inputClass =
   'w-full rounded-lg border border-[#1e1e2a] bg-[#0a0a0f] px-3 py-2 text-sm text-[#e4e4e7] outline-none focus:border-cyan-500/50'
 
+function normalizeImageUrl(value?: string) {
+  if (!value) return undefined
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed
+  if (trimmed.startsWith('/')) {
+    if (typeof window !== 'undefined') return `${window.location.origin}${trimmed}`
+    return trimmed
+  }
+  return trimmed
+}
+
 const emptyForm = {
   id: '',
   name: '',
@@ -123,7 +135,7 @@ export default function BlogCategoriesManager({ categories: initialCategories }:
         color: form.color || '#0ea5e9',
         meta_title: form.meta_title.trim() || undefined,
         meta_description: form.meta_description.trim() || undefined,
-        cover_image_url: form.cover_image_url.trim() || undefined,
+        cover_image_url: normalizeImageUrl(form.cover_image_url),
       }
 
       if (isEditing) {
@@ -199,7 +211,7 @@ export default function BlogCategoriesManager({ categories: initialCategories }:
   const selectCoverImage = async () => {
     const selected = await openPicker()
     if (!selected) return
-    setField('cover_image_url', selected.mediaUrl || selected.url)
+    setField('cover_image_url', selected.url || selected.mediaUrl)
   }
 
   return (
